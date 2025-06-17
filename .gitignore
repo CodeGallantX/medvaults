@@ -1,0 +1,12 @@
+# ===== server (Django) =====
+server/__pycache__/
+server/*.pyc
+server/*.pyo
+server/db.sqlite3
+server/*.sqlite3
+server/media/
+server/staticfiles/
+server/.env
+server/*.log
+server/venv/
+
