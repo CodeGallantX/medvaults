@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from .models import *
 
 
 User = get_user_model()
@@ -62,3 +63,35 @@ class EmergencyProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmergencyProfile
         exclude = ['user']  # we'll set it from the request.user in the view
+
+
+
+from rest_framework import serializers
+from .models import FoodAllergyScan
+
+class FoodAllergyScanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FoodAllergyScan
+        fields = ['id', 'user', 'food_name', 'food_image', 'detected_allergen', 'confidence', 'risk_level', 'created_at']
+        read_only_fields = ['user', 'detected_allergen', 'confidence', 'risk_level', 'created_at']
+
+
+class WalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wallet
+        fields = ['user', 'user_balance', 'pin', 'created_at', 'wallet_name', ]
+        read_only_fields = ['created_at', 'user', 'user_balance', ]
+
+    def validate_pin(self, value):
+        if len(str(value)) != 4 or not str(value).isdigit():
+            raise serializers.ValidationError("PIN must be exactly 4 digits.")
+        return value
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ['id', 'amount', 'transaction_type', 'created_at']
+        read_only_fields = ['id', 'created_at', 'transaction_type']
+        
+    
+    
