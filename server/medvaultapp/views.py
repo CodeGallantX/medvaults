@@ -11,7 +11,14 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import render, get_object_or_404
 from .models import *
 from drf_spectacular.utils import extend_schema
-
+from django.views.decorators.csrf import csrf_exempt
+import requests
+import nyckel
+import inflect
+import nyckel
+from django.utils import timezone
+from datetime import timedelta
+from django.http import JsonResponse
 
 
 User = get_user_model()
@@ -65,13 +72,6 @@ def emergency_profile_view(request, token):
 
 
 
-# views.py
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from .models import EmergencyProfile
-from .serializers import EmergencyProfileSerializer
 
 class EmergencyProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -123,24 +123,8 @@ class QRCodeView(APIView):
             return Response({"detail": "QR code not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from .models import FoodAllergyScan, EmergencyProfile
-from .serializers import FoodAllergyScanSerializer
-import nyckel
-import inflect
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from .models import EmergencyProfile
-from .serializers import FoodAllergyScanSerializer
-import nyckel
-from django.utils import timezone
-from datetime import timedelta
+
+
 
 p = inflect.engine()  # For plural/singular conversion
 
@@ -316,19 +300,7 @@ class WithdrawMoneyView(APIView):
                 },
                 "required": ["pin", "amount", "bank_name", "account_number", "account_name", "description"]
             },
-            "multipart/form-data": {
-                "type": "object",
-                "properties": {
-                    "pin": {"type": "string", "example": "1234"},
-                    "amount": {"type": "integer", "example": 500},
-                    "bank_name": {"type": "string", "example": "First Bank"},
-                    "account_number": {"type": "string", "example": "0123456789"},
-                    "account_name": {"type": "string", "example": "John Doe"},
-                    "description": {"type": "string", "example": "to pay for medical fee"},
 
-                },
-                "required": ["pin", "amount", "bank_name", "account_number", "account_name","description"]
-            }
         }
     )
 
@@ -388,22 +360,28 @@ class GetUserBalance(APIView):
 
 
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.utils import timezone
-from datetime import timedelta
-import requests
-from django.conf import settings
-from .models import Wallet, Transaction
-from .serializers import TransactionSerializer
+
 
 class CreateTransactionView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
     serializer_class = TransactionSerializer
+
+
+    @extend_schema(
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "pin": {"type": "integer", "example":  1234},
+                    "amount": {"type": "integer", "example": 500},
+ 
+                },
+                "required": ["pin", "amount"]
+            },
+      
+        }
+    )
 
     def post(self, request):
         user = request.user
@@ -432,8 +410,13 @@ class CreateTransactionView(APIView):
         pin = request.data.get('pin')
 
         # Validate PIN
-        if not pin or pin != wallet.pin:
-            return Response({"detail": "Invalid PIN."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        if not pin:
+            return Response({"detail": " PIN needed."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            if pin != wallet.pin:
+                return Response({"detail": "Invalid PIN."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Initialize Paystack payment
         paystack_response = self.initialize_paystack_payment(
@@ -491,14 +474,6 @@ class CreateTransactionView(APIView):
             return {"status": False, "message": str(e)}
         
 
-
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-import requests
-from django.conf import settings
-from .models import Transaction
 
 @csrf_exempt
 def verify_payment(request):
