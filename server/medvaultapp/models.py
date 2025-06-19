@@ -59,3 +59,48 @@ class QRCode(models.Model):
 
 
 
+from django.db import models
+from django.conf import settings
+from cloudinary.models import CloudinaryField
+
+class FoodAllergyScan(models.Model):
+    RISK_CHOICES = [
+        ("low", "Low Risk"),
+        ("medium", "Medium Risk"),
+        ("high", "High Risk"),
+    ]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    food_name = models.CharField(max_length=100, blank=True, null=True)
+    food_image = CloudinaryField('image', blank=True, null=True)
+    detected_allergen = models.CharField(max_length=100, blank=True, null=True)
+    confidence = models.FloatField(blank=True, null=True)
+    risk_level = models.CharField(max_length=10, choices=RISK_CHOICES, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.food_name or 'Image Scan'} ({self.risk_level})"
+
+
+class Wallet(models.Model):
+    wallet_name = models.CharField(max_length=200, default="", unique=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    pin = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s Wallet"
+    
+class Transaction(models.Model):
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    payment_reference = models.CharField(max_length=100, blank=True, null=True)  # Add this line
+    transaction_type = models.CharField(max_length=10)  # e.g., 'credit', 'debit'
+    status = models.CharField(max_length=10, default='pending')  # e.g., 'credit', 'debit'
+
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.wallet.user.username} - {self.transaction_type} of {self.amount}"

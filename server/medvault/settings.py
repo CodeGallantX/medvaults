@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-b^=+3%71f1#6z%mx69csu#p*n#e(8r**0*zybseprgj$9^_&%8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -177,7 +177,7 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
@@ -241,4 +241,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_USER_MODEL = 'medvaultapp.CustomUser'
 
-BASE_FRONTEND_URL = "http://127.0.0.1:8000"  # Change to your live URL later
+BASE_FRONTEND_URL = "https://medvaults.onrender.com"  # Change to your live URL later
+
+
+
+PAYSTACK_PUBLIC_KEY = 'pk_test_f9d4e9c4b70a553a45fd67aea9e4f1429de302cf'
+PAYSTACK_SECRET_KEY = 'sk_test_2de22e65cd85be13d98741474297a8e5bf84dcf5'
