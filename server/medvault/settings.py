@@ -241,7 +241,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_USER_MODEL = 'medvaultapp.CustomUser'
 
-BASE_FRONTEND_URL = "http://127.0.0.1:8000"  # Change to your live URL later
+BASE_FRONTEND_URL = "medvaults.onrender.com"  # Change to your live URL later
 
 
 
