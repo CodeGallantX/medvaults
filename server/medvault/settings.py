@@ -235,6 +235,9 @@ EMAIL_HOST_USER = 'ojugbelelateef2006@gmail.com'
 EMAIL_HOST_PASSWORD = 'yshhvvigaryqlabg'
 DEFAULT_FROM_EMAIL = 'ojugbelelateef2006@gmail.com'  # Default "from" email
 ADMIN_NOTIFICATION_EMAIL = 'ojugbelelateef2006@gmail.com'  # Website owner's email
+CSRF_TRUSTED_ORIGINS = [
+    'https://medvaults.onrender.com',
+]
 
 
 CORS_ALLOW_ALL_ORIGINS = True
