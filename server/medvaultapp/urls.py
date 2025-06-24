@@ -18,12 +18,6 @@ urlpatterns = [
     path("transactions_list/", TransactionListView.as_view(), name="transaction_list"),
     path("withdraw_money/", WithdrawMoneyView.as_view(), name="witdraw_money"),
     path("your_balance/", GetUserBalance.as_view(), name="get_balance"),
+    path("your_scan_history/", FoodAllergyScanListView.as_view(), name="scan_history"),
     path('verify-payment/', verify_payment, name='verify_payment'),  # Add this line
-
-
-
-
-
-    
-
 ]
