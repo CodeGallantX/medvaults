@@ -82,6 +82,7 @@ class EmergencyProfileView(APIView):
     def get(self, request):
         try:
             profile = request.user.emergencyprofile
+            # userprofile = EmergencyProfile.objects.get(user = request.user)
             serializer = self.serializer_class(profile)
             return Response(serializer.data)
         except EmergencyProfile.DoesNotExist:
@@ -532,6 +533,11 @@ def verify_payment(request):
         {"status": "failed", "message": "Method not allowed"},
         status=405
     )
+
+
+
+
+
 
 
 

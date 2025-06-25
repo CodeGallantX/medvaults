@@ -20,4 +20,8 @@ urlpatterns = [
     path("your_balance/", GetUserBalance.as_view(), name="get_balance"),
     path("your_scan_history/", FoodAllergyScanListView.as_view(), name="scan_history"),
     path('verify-payment/', verify_payment, name='verify_payment'),  # Add this line
+    path("your_scan_history/", FoodAllergyScanListView.as_view(), name="scan_history"),
+
+
+
 ]
