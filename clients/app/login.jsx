@@ -14,25 +14,41 @@ import {
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link } from 'expo-router';
+import api from "@/assets/api"
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from 'expo-router';
+import { Alert } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter()
+
 
   const handleLogin = async () => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await api.post('login/', {username: username, password });
+      await AsyncStorage.setItem('access_token', response.data.access);
+      await AsyncStorage.setItem('refresh_token', response.data.refresh);
+      Alert.alert('Login Success');
+      router.push('/health_setup');
+    } catch (error) {
+      Alert.alert('Login Failed', 'Check your credentials');
+      console.log("Error details:", error.response?.data || error.message); // ✅ See backend error
+      
+    } finally {
       setIsLoading(false);
-      // Navigate to home screen
-    }, 2000);
+    }
   };
+  
 
-  const handleSocialLogin = (provider: string) => {
+  const handleSocialLogin = (provider) => {
     console.log(`Login with ${provider}`);
   };
 
@@ -47,15 +63,7 @@ export default function LoginScreen() {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
         <View style={styles.header}>
-          {/* <View style={styles.logoContainer}>
-            <View style={styles.logo}>
-              <MaterialIcons name="health-and-safety" size={40} color="white" />
-            </View>
-            <Text style={styles.appName}>MedVault</Text>
-          </View> */}
-          
           <View style={styles.welcomeSection}>
             <Text style={styles.welcomeTitle}>Welcome back!</Text>
             <Text style={styles.welcomeSubtitle}>
@@ -64,27 +72,24 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Form Section */}
         <View style={styles.formContainer}>
-          {/* Email Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Email Address</Text>
             <View style={styles.inputContainer}>
               <MaterialIcons name="email" size={20} color="#6b7280" style={styles.inputIcon} />
               <TextInput
                 style={styles.textInput}
-                placeholder="Enter your email"
+                placeholder="Enter your username"
                 placeholderTextColor="#6b7280"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                value={username}
+                onChangeText={setUsername}
+                keyboardType="default"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
             </View>
           </View>
 
-          {/* Password Input */}
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Password</Text>
             <View style={styles.inputContainer}>
@@ -112,12 +117,10 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Forgot Password */}
           <TouchableOpacity style={styles.forgotPassword}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          {/* Login Button */}
           <TouchableOpacity
             style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
             onPress={handleLogin}
@@ -133,14 +136,12 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or continue with</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Social Login Buttons */}
           <View style={styles.socialContainer}>
             <TouchableOpacity
               style={styles.socialButton}
@@ -158,15 +159,8 @@ export default function LoginScreen() {
               <Text style={styles.socialButtonText}>Apple</Text>
             </TouchableOpacity>
           </View>
-
-          {/* Biometric Login */}
-          {/* <TouchableOpacity style={styles.biometricButton}>
-            <MaterialIcons name="fingerprint" size={32} color="#a855f7" />
-            <Text style={styles.biometricText}>Use Touch ID</Text>
-          </TouchableOpacity> */}
         </View>
 
-        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             Don't have an account?{' '}
@@ -175,16 +169,6 @@ export default function LoginScreen() {
             </Link>
           </Text>
         </View>
-
-        {/* Health Tips */}
-        {/* <View style={styles.tipsContainer}>
-          <View style={styles.tipCard}>
-            <MaterialIcons name="tips-and-updates" size={20} color="#f59e0b" />
-            <Text style={styles.tipText}>
-              💡 Tip: Enable biometric login for faster, secure access to your health data
-            </Text>
-          </View>
-        </View> */}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -322,7 +306,6 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     borderTopColor: 'transparent',
     marginRight: 8,
-    // Add rotation animation here if needed
   },
   divider: {
     flexDirection: 'row',

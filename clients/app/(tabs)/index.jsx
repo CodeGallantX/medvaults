@@ -4,10 +4,12 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useRef, useState, useEffect } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, View, FlatList, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from "expo-router";
+
 
 const { height, width } = Dimensions.get("window");
 
-// Enhanced carousel data with gradients and icons
 const carouselData = [
   {
     text: "Scan your meal for allergies",
@@ -32,7 +34,6 @@ const carouselData = [
   },
 ];
 
-// Enhanced recent activities data
 const recentActivities = [
   {
     title: "Scanned pasta dish",
@@ -73,9 +74,20 @@ const recentActivities = [
 
 export default function HomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef(null);
+  const router = useRouter()
 
-  // Auto-scroll functionality
+  // Function to handle "My Health" card press
+  const handleMyHealthPress = async () => {
+    const token = await AsyncStorage.getItem('access_token');
+    if (token) {
+      router.push("/emergency-profile");
+    } else {
+      router.push("/login");
+    }
+  };
+
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => {
@@ -86,7 +98,7 @@ export default function HomeScreen() {
         });
         return nextIndex;
       });
-    }, 4000); // Increased to 4 seconds for better UX
+    }, 4000);
 
     return () => clearInterval(interval);
   }, []);
@@ -101,7 +113,6 @@ export default function HomeScreen() {
         backgroundColor: "#0f0f14",
       }}
     >
-      {/* Enhanced Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>
@@ -117,9 +128,8 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Enhanced Main Actions */}
       <View style={styles.mainActions}>
-        <TouchableOpacity onPress={()=> router.push("/login")} style={[styles.actionCard, { backgroundColor: '#1a365d' }]}>
+        <TouchableOpacity onPress={handleMyHealthPress} style={[styles.actionCard, { backgroundColor: '#1a365d' }]}>
           <View style={[styles.iconContainer, { backgroundColor: '#3182ce' }]}>
             <MaterialIcons name="health-and-safety" size={32} color="white" />
           </View>
@@ -136,7 +146,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Enhanced Quick Actions */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick actions</Text>
         <ScrollView
@@ -162,7 +171,6 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      {/* Enhanced Carousel */}
       <View style={styles.section}>
         <FlatList
           ref={flatListRef}
@@ -186,7 +194,6 @@ export default function HomeScreen() {
           })}
         />
 
-        {/* Enhanced Pagination */}
         <View style={styles.pagination}>
           {carouselData.map((_, index) => (
             <View
@@ -203,7 +210,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Enhanced Recent Activities */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Activities</Text>
@@ -229,13 +235,8 @@ export default function HomeScreen() {
   );
 }
 
-function EnhancedCarouselCard({
-  data,
-  index,
-}: {
-  data: { backgroundColor: string; icon: React.ReactNode; text: string; subtitle: string }[];
-  index: number;
-}) {
+function EnhancedCarouselCard(props) {
+  const { data, index } = props;
   const item = data[index];
   
   return (
@@ -433,7 +434,6 @@ const styles = StyleSheet.create({
   paginationDot: {
     height: 8,
     borderRadius: 4,
-    // transition: 'all 0.3s ease',
   },
   activityCard: {
     flexDirection: "row",

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,98 +8,59 @@ import {
   StatusBar,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
+import api from '@/assets/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
-// Mock emergency profile data
-const emergencyData = {
-  id: 1,
-  blood_type: "O+",
-  genotype: "AA",
-  weight: 75,
-  allergies: "Peanuts, Shellfish, Penicillin",
-  conditions: "Hypertension, Type 2 Diabetes",
-  medications: "Metformin 500mg (2x daily), Lisinopril 10mg (1x daily)",
-  emergency_contact_name: "Sarah Johnson",
-  emergency_contact_phone: "+1 (555) 123-4567",
-  vaccination_history: "COVID-19 (Pfizer, 2023), Flu Shot (2023), Hepatitis B (Complete)",
-  dietary_restrictions: "Vegetarian, Low Sodium",
-  smoking_status: "Never",
-  alcohol_consumption: "Occasional",
-  physical_activity_level: "Moderate"
-};
-
-// Medical info sections with icons and colors
-const medicalSections = [
-  {
-    title: "Blood & Genetics",
-    icon: "bloodtype",
-    color: "#ef4444",
-    bgColor: "#fef2f2",
-    items: [
-      { label: "Blood Type", value: emergencyData.blood_type, icon: "opacity" },
-      { label: "Genotype", value: emergencyData.genotype, icon: "science" },
-      { label: "Weight", value: `${emergencyData.weight} kg`, icon: "monitor-weight" }
-    ]
-  },
-  {
-    title: "Medical Conditions",
-    icon: "medical-services",
-    color: "#f59e0b",
-    bgColor: "#fffbeb",
-    items: [
-      { label: "Allergies", value: emergencyData.allergies, icon: "warning", multiline: true },
-      { label: "Conditions", value: emergencyData.conditions, icon: "healing", multiline: true },
-      { label: "Medications", value: emergencyData.medications, icon: "medication", multiline: true }
-    ]
-  },
-  {
-    title: "Emergency Contact",
-    icon: "contact-phone",
-    color: "#10b981",
-    bgColor: "#f0fdf4",
-    items: [
-      { label: "Contact Name", value: emergencyData.emergency_contact_name, icon: "person" },
-      { label: "Phone Number", value: emergencyData.emergency_contact_phone, icon: "phone", actionable: true }
-    ]
-  },
-  {
-    title: "Health History",
-    icon: "history",
-    color: "#3b82f6",
-    bgColor: "#eff6ff",
-    items: [
-      { label: "Vaccinations", value: emergencyData.vaccination_history, icon: "vaccines", multiline: true }
-    ]
-  },
-  {
-    title: "Lifestyle",
-    icon: "fitness-center",
-    color: "#8b5cf6",
-    bgColor: "#f5f3ff",
-    items: [
-      { label: "Dietary Restrictions", value: emergencyData.dietary_restrictions, icon: "restaurant" },
-      { label: "Smoking Status", value: emergencyData.smoking_status, icon: "smoke-free" },
-      { label: "Alcohol Consumption", value: emergencyData.alcohol_consumption, icon: "local-bar" },
-      { label: "Physical Activity", value: emergencyData.physical_activity_level, icon: "directions-run" }
-    ]
-  }
-];
-
-export default function EmergencyProfileScreen() {
+function EmergencyProfileScreen() {
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = await AsyncStorage.getItem('access_token');
+        if (!token) {
+          Alert.alert(
+            'You must be logged in to access this page',
+            'Please log in to continue.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Login here', onPress: () => router.push('/login') },
+            ]
+          );
+          return;
+        }
+
+        const res = await api.get('api/emergency-profile/');
+        setProfile(res.data);
+      } catch (error) {
+        console.error('Profile fetch failed:', error);
+        Alert.alert('Error', 'Failed to load profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleCallEmergencyContact = () => {
+    if (!profile) return;
     Alert.alert(
-      "Call Emergency Contact",
-      `Call ${emergencyData.emergency_contact_name} at ${emergencyData.emergency_contact_phone}?`,
+      'Call Emergency Contact',
+      `Call ${profile.emergency_contact_name} at ${profile.emergency_contact_phone}?`,
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Call", onPress: () => console.log("Calling emergency contact") }
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Call', onPress: () => console.log(profile) },
       ]
     );
   };
@@ -108,22 +69,77 @@ export default function EmergencyProfileScreen() {
     setIsGeneratingQR(true);
     setTimeout(() => {
       setIsGeneratingQR(false);
-      Alert.alert("QR Code Generated", "Your emergency profile QR code has been created and saved to your device.");
+      Alert.alert('QR Code Generated', 'QR code created and saved.');
     }, 2000);
   };
 
   const handleShare = () => {
-    Alert.alert("Share Profile", "Share your emergency profile with healthcare providers or emergency contacts.");
+    Alert.alert('Share Profile', 'Share with healthcare professionals.');
   };
+
+  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 100 }} />;
+  if (!profile) return <Text style={{ color: '#fff', textAlign: 'center', marginTop: 100 }}>No emergency profile found.</Text>;
+
+  const medicalSections = [
+    {
+      title: 'Blood & Genetics',
+      icon: 'bloodtype',
+      color: '#ef4444',
+      bgColor: '#fef2f2',
+      items: [
+        { label: 'Blood Type', value: profile.blood_type, icon: 'opacity' },
+        { label: 'Genotype', value: profile.genotype, icon: 'science' },
+        { label: 'Weight', value: `${profile.weight} kg`, icon: 'monitor-weight' },
+      ],
+    },
+    {
+      title: 'Medical Conditions',
+      icon: 'medical-services',
+      color: '#f59e0b',
+      bgColor: '#fffbeb',
+      items: [
+        { label: 'Allergies', value: profile.allergies, icon: 'warning', multiline: true },
+        { label: 'Conditions', value: profile.conditions, icon: 'healing', multiline: true },
+        { label: 'Medications', value: profile.medications, icon: 'medication', multiline: true },
+      ],
+    },
+    {
+      title: 'Emergency Contact',
+      icon: 'contact-phone',
+      color: '#10b981',
+      bgColor: '#f0fdf4',
+      items: [
+        { label: 'Contact Name', value: profile.emergency_contact_name, icon: 'person' },
+        { label: 'Phone Number', value: profile.emergency_contact_phone, icon: 'phone', actionable: true },
+      ],
+    },
+    {
+      title: 'Health History',
+      icon: 'history',
+      color: '#3b82f6',
+      bgColor: '#eff6ff',
+      items: [
+        { label: 'Vaccinations', value: profile.vaccination_history, icon: 'vaccines', multiline: true },
+      ],
+    },
+    {
+      title: 'Lifestyle',
+      icon: 'fitness-center',
+      color: '#8b5cf6',
+      bgColor: '#f5f3ff',
+      items: [
+        { label: 'Dietary Restrictions', value: profile.dietary_restrictions, icon: 'restaurant' },
+        { label: 'Smoking Status', value: profile.smoking_status, icon: 'smoke-free' },
+        { label: 'Alcohol Consumption', value: profile.alcohol_consumption, icon: 'local-bar' },
+        { label: 'Physical Activity', value: profile.physical_activity_level, icon: 'directions-run' },
+      ],
+    },
+  ];
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0f0f14" />
-      
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Link href="/profile" asChild>
@@ -137,30 +153,24 @@ export default function EmergencyProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Emergency Alert Banner */}
+        {/* Banner */}
         <View style={styles.alertBanner}>
           <View style={styles.alertIcon}>
             <MaterialIcons name="emergency" size={24} color="#fff" />
           </View>
           <View style={styles.alertContent}>
             <Text style={styles.alertTitle}>Emergency Medical Information</Text>
-            <Text style={styles.alertSubtitle}>
-              Critical health data for emergency responders
-            </Text>
+            <Text style={styles.alertSubtitle}>Critical health data for emergency responders</Text>
           </View>
         </View>
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: '#10b981' }]}
-            onPress={handleCallEmergencyContact}
-          >
+          <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#10b981' }]} onPress={handleCallEmergencyContact}>
             <MaterialIcons name="phone" size={20} color="#fff" />
             <Text style={styles.actionButtonText}>Call Contact</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: '#a855f7' }]}
             onPress={handleGenerateQR}
             disabled={isGeneratingQR}
@@ -179,7 +189,7 @@ export default function EmergencyProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Medical Information Sections */}
+        {/* Medical Info Sections */}
         {medicalSections.map((section, sectionIndex) => (
           <View key={sectionIndex} style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -188,7 +198,6 @@ export default function EmergencyProfileScreen() {
               </View>
               <Text style={styles.sectionTitle}>{section.title}</Text>
             </View>
-            
             {section.items.map((item, itemIndex) => (
               <View key={itemIndex} style={styles.infoCard}>
                 <View style={styles.infoHeader}>
@@ -197,23 +206,20 @@ export default function EmergencyProfileScreen() {
                     <Text style={styles.infoLabelText}>{item.label}</Text>
                   </View>
                   {item.actionable && (
-                    <TouchableOpacity 
-                      style={styles.actionIcon}
-                      onPress={handleCallEmergencyContact}
-                    >
+                    <TouchableOpacity style={styles.actionIcon} onPress={handleCallEmergencyContact}>
                       <MaterialIcons name="phone" size={18} color="#10b981" />
                     </TouchableOpacity>
                   )}
                 </View>
                 <Text style={[styles.infoValue, item.multiline && styles.infoValueMultiline]}>
-                  {item.value}
+                  {item.value || 'Not provided'}
                 </Text>
               </View>
             ))}
           </View>
         ))}
 
-        {/* Important Notice */}
+        {/* Notice */}
         <View style={styles.noticeCard}>
           <View style={styles.noticeIcon}>
             <MaterialIcons name="info" size={20} color="#3b82f6" />
@@ -221,7 +227,7 @@ export default function EmergencyProfileScreen() {
           <View style={styles.noticeContent}>
             <Text style={styles.noticeTitle}>Important Notice</Text>
             <Text style={styles.noticeText}>
-              This information is for emergency use only. Always consult with healthcare professionals for medical decisions. Keep this profile updated with your latest medical information.
+              This information is for emergency use only. Always consult with healthcare professionals. Keep this profile up to date.
             </Text>
           </View>
         </View>
@@ -229,9 +235,7 @@ export default function EmergencyProfileScreen() {
         {/* Last Updated */}
         <View style={styles.lastUpdated}>
           <MaterialIcons name="schedule" size={16} color="#6b7280" />
-          <Text style={styles.lastUpdatedText}>
-            Last updated: {new Date().toLocaleDateString()}
-          </Text>
+          <Text style={styles.lastUpdatedText}>Last updated: {new Date().toLocaleDateString()}</Text>
         </View>
       </ScrollView>
     </View>
@@ -450,4 +454,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginLeft: 6,
   },
+  // ... same styles as your original
 });
+
+export default EmergencyProfileScreen;

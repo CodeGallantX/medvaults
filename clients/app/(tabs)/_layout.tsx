@@ -56,3 +56,55 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+
+
+// import { View, Text } from 'react-native'
+// import React from 'react'
+// import { Tabs } from 'expo-router'
+// import TabBar from "@/components/TabBar"
+// import { HapticTab } from '@/components/HapticTab';
+
+// const _layout = () => {
+//   return (
+//     <Tabs screenOptions={{
+//       tabBarActiveTintColor: "#b9b9e3",
+//       headerShown: false,
+//       tabBarButton: HapticTab,
+//       tabBarStyle: {
+//         backgroundColor: "#0d0c0f",
+//         height: 60,
+//         borderWidth: 0
+//       }
+//     }}
+//       tabBar={props => <TabBar {...props} />}
+//     >
+//       <Tabs.Screen
+//         name="food_scan"
+//         options={{
+//           title: "Food Scan"
+//         }}
+//       />
+//       <Tabs.Screen
+//         name="index"
+//         options={{
+//           title: "Index"
+//         }}
+//       />
+//       <Tabs.Screen
+//         name="profile"
+//         options={{
+//           title: "Profile"
+//         }}
+//       />
+//       {/* <Tabs.Screen
+//             name="profile"
+//             options={{
+//                 title: "Profile"
+//             }}
+//         /> */}
+//     </Tabs>
+//   )
+// }
+
+// export default _layout

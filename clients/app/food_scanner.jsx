@@ -17,37 +17,24 @@ import CameraScanner from '@/components/CameraScanner';
 
 const { width, height } = Dimensions.get('window');
 
-interface ScanResult {
-  id: number;
-  user: number;
-  food_name: string;
-  food_image: string;
-  detected_allergen: string;
-  confidence: number;
-  risk_level: 'low' | 'medium' | 'high';
-  created_at: string;
-}
-
 export default function FoodScanScreen() {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [scanResult, setScanResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
-  const [uploadUri, setUploadUri] = useState<string | null>(null);
+  const [uploadUri, setUploadUri] = useState(null);
   const [showCamera, setShowCamera] = useState(true);
 
-  // Handle image from camera
   useEffect(() => {
     if (uploadUri) {
       setSelectedImage(uploadUri);
-      setShowCamera(false); // Hide camera after capturing
+      setShowCamera(false);
       setShowResult(false);
       setScanResult(null);
     }
   }, [uploadUri]);
 
-  // Mock function to simulate API call
-  const analyzeFoodImage = async (imageUri: string): Promise<ScanResult> => {
+  const analyzeFoodImage = async (imageUri) => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
@@ -65,7 +52,6 @@ export default function FoodScanScreen() {
   };
 
   const handleImageCapture = () => {
-    // Show camera for capturing new image
     setShowCamera(true);
     setSelectedImage(null);
     setShowResult(false);
@@ -100,7 +86,7 @@ export default function FoodScanScreen() {
     setUploadUri(null);
   };
 
-  const getRiskColor = (riskLevel: string) => {
+  const getRiskColor = (riskLevel) => {
     switch (riskLevel) {
       case 'low': return '#10b981';
       case 'medium': return '#f59e0b';
@@ -109,7 +95,7 @@ export default function FoodScanScreen() {
     }
   };
 
-  const getRiskIcon = (riskLevel: string) => {
+  const getRiskIcon = (riskLevel) => {
     switch (riskLevel) {
       case 'low': return 'check-circle';
       case 'medium': return 'warning';
@@ -118,7 +104,7 @@ export default function FoodScanScreen() {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -130,7 +116,6 @@ export default function FoodScanScreen() {
   if (showCamera) {
     return (
       <View style={styles.container}>
-        {/* Header for camera view */}
         <View style={styles.cameraHeader}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="white" />
@@ -138,13 +123,9 @@ export default function FoodScanScreen() {
           <Text style={styles.headerTitle}>Capture Food</Text>
           <View style={styles.placeholder} />
         </View>
-        
-        {/* Embedded Camera */}
         <View style={styles.cameraContainer}>
           <CameraScanner setUploadUri={setUploadUri} />
         </View>
-        
-        {/* Camera instructions */}
         <View style={styles.cameraInstructions}>
           <Text style={styles.instructionsTitle}>Position your food in the frame</Text>
           <Text style={styles.instructionsText}>Make sure the food is well-lit and clearly visible</Text>
@@ -159,7 +140,6 @@ export default function FoodScanScreen() {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -170,7 +150,6 @@ export default function FoodScanScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Camera/Upload Section */}
       <View style={styles.cameraSection}>
         {selectedImage ? (
           <View style={styles.imageContainer}>
@@ -190,7 +169,6 @@ export default function FoodScanScreen() {
         )}
       </View>
 
-      {/* Action Buttons */}
       <View style={styles.actionButtons}>
         <TouchableOpacity style={styles.galleryButton} onPress={handleImageCapture}>
           <MaterialIcons name="photo-library" size={24} color="#a855f7" />
@@ -219,7 +197,6 @@ export default function FoodScanScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Scanning Progress */}
       {isScanning && (
         <View style={styles.scanningProgress}>
           <View style={styles.progressCard}>
@@ -235,7 +212,6 @@ export default function FoodScanScreen() {
         </View>
       )}
 
-      {/* Results Section */}
       {showResult && scanResult && (
         <View style={styles.resultsSection}>
           <View style={styles.resultHeader}>
@@ -243,7 +219,6 @@ export default function FoodScanScreen() {
             <Text style={styles.resultTitle}>Analysis Complete</Text>
           </View>
 
-          {/* Food Name */}
           <View style={styles.resultCard}>
             <View style={styles.resultCardHeader}>
               <MaterialIcons name="restaurant" size={20} color="#3b82f6" />
@@ -252,7 +227,6 @@ export default function FoodScanScreen() {
             <Text style={styles.foodName}>{scanResult.food_name}</Text>
           </View>
 
-          {/* Risk Level */}
           <View style={[styles.resultCard, { borderLeftColor: getRiskColor(scanResult.risk_level) }]}>
             <View style={styles.resultCardHeader}>
               <MaterialIcons 
@@ -275,7 +249,6 @@ export default function FoodScanScreen() {
             </View>
           </View>
 
-          {/* Allergens */}
           <View style={styles.resultCard}>
             <View style={styles.resultCardHeader}>
               <MaterialIcons name="warning" size={20} color="#f59e0b" />
@@ -291,7 +264,6 @@ export default function FoodScanScreen() {
             </View>
           </View>
 
-          {/* Timestamp */}
           <View style={styles.timestampCard}>
             <MaterialIcons name="schedule" size={16} color="#6b7280" />
             <Text style={styles.timestampText}>
@@ -299,7 +271,6 @@ export default function FoodScanScreen() {
             </Text>
           </View>
 
-          {/* Action Buttons */}
           <View style={styles.resultActions}>
             <TouchableOpacity style={styles.saveButton}>
               <MaterialIcons name="bookmark" size={20} color="white" />
@@ -314,7 +285,6 @@ export default function FoodScanScreen() {
         </View>
       )}
 
-      {/* Tips Section */}
       <View style={styles.tipsSection}>
         <Text style={styles.tipsTitle}>📸 Scanning Tips</Text>
         <View style={styles.tipsList}>
@@ -336,7 +306,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 30,
   },
-  // Camera-specific styles
   cameraHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -375,7 +344,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
   },
-  // Existing styles
   header: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -11,11 +11,11 @@ import {
   Platform,
   ScrollView,
   Alert,
-  GestureResponderEvent,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Link } from "expo-router";
+import api from "@/assets/api"
 
 const { width, height } = Dimensions.get("window");
 
@@ -34,13 +34,12 @@ export default function RegisterScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
 
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({
         ...prev,
@@ -87,38 +86,50 @@ export default function RegisterScreen() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleRegister = async () => {
     if (!validateForm()) return;
-
+  
     setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      Alert.alert("Success!", "Your account has been created successfully.", [
+    try {
+        const res = await api.post("/register/", {
+        username: formData.username,
+        email: formData.email,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        password: formData.password,
+        password2: formData.password2,
+      });
+  
+      Alert.alert("Success!", "Account created successfully.", [
         { text: "OK", onPress: () => console.log("Navigate to login") },
       ]);
-    }, 2000);
+    } catch (error) {
+      console.log("Registration failed:", error.response?.data || error.message);
+  
+      // Show detailed validation errors from backend
+      if (error.response?.data) {
+        const apiErrors = error.response.data;
+        const newErrors = {};
+        for (const key in apiErrors) {
+          newErrors[key] = apiErrors[key][0];
+        }
+        setErrors(newErrors);
+      } else {
+        Alert.alert("Error", "Something went wrong. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  const handleSocialRegister = (provider: string) => {
+  const handleSocialRegister = (provider) => {
     console.log(`Register with ${provider}`);
   };
 
   const renderInput = (
-    field: string,
-    label: string,
-    placeholder: string,
-    options: {
-      icon?: string;
-      keyboardType?: string;
-      autoCapitalize?: string;
-      secureTextEntry?: boolean;
-      showToggle?: boolean;
-      toggleState?: boolean;
-      onToggle?: (event: GestureResponderEvent) => void;
-    }
+    field,
+    label,
+    placeholder,
+    options
   ) => {
     const {
       icon,
@@ -182,15 +193,7 @@ export default function RegisterScreen() {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
         <View style={styles.header}>
-          {/* <View style={styles.logoContainer}>
-            <View style={styles.logo}>
-              <MaterialIcons name="health-and-safety" size={40} color="white" />
-            </View>
-            <Text style={styles.appName}>HealthGuard</Text>
-          </View> */}
-
           <View style={styles.welcomeSection}>
             <Text style={styles.welcomeTitle}>Create Account</Text>
             <Text style={styles.welcomeSubtitle}>
@@ -199,22 +202,18 @@ export default function RegisterScreen() {
           </View>
         </View>
 
-        {/* Form Section */}
         <View style={styles.formContainer}>
-          {/* Username */}
           {renderInput("username", "Username", "Choose a unique username", {
             icon: "person",
             autoCapitalize: "none",
           })}
 
-          {/* Email */}
           {renderInput("email", "Email Address", "Enter your email address", {
             icon: "email",
             keyboardType: "email-address",
             autoCapitalize: "none",
           })}
 
-          {/* Name Fields Row */}
           <View style={styles.nameRow}>
             <View style={styles.nameField}>
               {renderInput("first_name", "First Name", "First name", {
@@ -230,7 +229,6 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          {/* Password */}
           {renderInput("password", "Password", "Create a strong password", {
             icon: "lock",
             secureTextEntry: true,
@@ -240,7 +238,6 @@ export default function RegisterScreen() {
             autoCapitalize: "none",
           })}
 
-          {/* Confirm Password */}
           {renderInput(
             "password2",
             "Confirm Password",
@@ -255,7 +252,6 @@ export default function RegisterScreen() {
             }
           )}
 
-          {/* Password Requirements */}
           <View style={styles.passwordRequirements}>
             <Text style={styles.requirementsTitle}>Password Requirements:</Text>
             <View style={styles.requirementsList}>
@@ -308,21 +304,6 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          {/* Terms and Conditions */}
-          {/* <View style={styles.termsContainer}>
-            <Text style={styles.termsText}>
-              By creating an account, you agree to our{' '}
-              <TouchableOpacity>
-                <Text style={styles.linkText}>Terms of Service</Text>
-              </TouchableOpacity>
-              {' '}and{' '}
-              <TouchableOpacity>
-                <Text style={styles.linkText}>Privacy Policy</Text>
-              </TouchableOpacity>
-            </Text>
-          </View> */}
-
-          {/* Register Button */}
           <TouchableOpacity
             style={[
               styles.registerButton,
@@ -343,14 +324,12 @@ export default function RegisterScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Divider */}
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or sign up with</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Social Register Buttons */}
           <View style={styles.socialContainer}>
             <TouchableOpacity
               style={styles.socialButton}
@@ -370,7 +349,6 @@ export default function RegisterScreen() {
           </View>
         </View>
 
-        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
             Already have an account?{" "}
@@ -380,7 +358,6 @@ export default function RegisterScreen() {
           </Text>
         </View>
 
-        {/* Health Privacy Notice */}
         <View style={styles.privacyNotice}>
           <View style={styles.privacyCard}>
             <MaterialIcons name="security" size={20} color="#10b981" />
