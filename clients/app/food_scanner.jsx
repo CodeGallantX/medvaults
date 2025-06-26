@@ -1,93 +1,89 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   ScrollView,
   Image,
   Alert,
   ActivityIndicator,
+  Dimensions
 } from 'react-native';
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import * as ImagePicker from 'expo-image-picker';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import CameraScanner from '@/components/CameraScanner';
+import api from '@/assets/api';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-export default function FoodScanScreen() {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState(null);
-  const [showResult, setShowResult] = useState(false);
-  const [uploadUri, setUploadUri] = useState(null);
-  const [showCamera, setShowCamera] = useState(true);
+const ScanFoodScreen = () => {
+  // Tab state
+  const [activeTab, setActiveTab] = useState('image'); // 'image' or 'text'
+  const [foodName, setFoodName] = useState('');
+  const [image, setImage] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (uploadUri) {
-      setSelectedImage(uploadUri);
-      setShowCamera(false);
-      setShowResult(false);
-      setScanResult(null);
-    }
-  }, [uploadUri]);
-
-  const analyzeFoodImage = async (imageUri) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          id: Math.floor(Math.random() * 1000),
-          user: 1,
-          food_name: "Chicken Caesar Salad",
-          food_image: imageUri,
-          detected_allergen: "Dairy, Eggs, Gluten",
-          confidence: 0.87,
-          risk_level: "medium",
-          created_at: new Date().toISOString(),
-        });
-      }, 3000);
-    });
-  };
-
-  const handleImageCapture = () => {
-    setShowCamera(true);
-    setSelectedImage(null);
-    setShowResult(false);
-    setScanResult(null);
-  };
-
-  const handleScanFood = async () => {
-    if (!selectedImage) {
-      Alert.alert('No Image', 'Please capture or select an image first');
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert("Permission required", "We need access to your photos to select images");
       return;
     }
 
-    setIsScanning(true);
-    setShowResult(false);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
 
-    try {
-      const result = await analyzeFoodImage(selectedImage);
-      setScanResult(result);
-      setShowResult(true);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to analyze food. Please try again.');
-    } finally {
-      setIsScanning(false);
+    if (!result.canceled) {
+      setImage(result.assets[0]);
+      setResult(null);
     }
   };
 
-  const handleNewScan = () => {
-    setSelectedImage(null);
-    setScanResult(null);
-    setShowResult(false);
-    setShowCamera(true);
-    setUploadUri(null);
+  const submitScan = async () => {
+    if ((activeTab === 'image' && !image) || (activeTab === 'text' && !foodName.trim())) {
+      Alert.alert("Missing Input", activeTab === 'image' 
+        ? "Please select an image" 
+        : "Please enter food name");
+      return;
+    }
+
+    const formData = new FormData();
+    if (activeTab === 'text') {
+      formData.append("food_name", foodName);
+    } else {
+      formData.append("food_image", {
+        uri: image.uri,
+        name: "food.jpg",
+        type: "image/jpeg",
+      });
+    }
+
+    try {
+      setLoading(true);
+      const response = await api.post("/scan-food/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setResult(response.data);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Could not scan food. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getRiskColor = (riskLevel) => {
-    switch (riskLevel) {
+    switch (riskLevel?.toLowerCase()) {
       case 'low': return '#10b981';
       case 'medium': return '#f59e0b';
       case 'high': return '#ef4444';
@@ -96,7 +92,7 @@ export default function FoodScanScreen() {
   };
 
   const getRiskIcon = (riskLevel) => {
-    switch (riskLevel) {
+    switch (riskLevel?.toLowerCase()) {
       case 'low': return 'check-circle';
       case 'medium': return 'warning';
       case 'high': return 'dangerous';
@@ -104,199 +100,227 @@ export default function FoodScanScreen() {
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  if (showCamera) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.cameraHeader}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Capture Food</Text>
-          <View style={styles.placeholder} />
-        </View>
-        <View style={styles.cameraContainer}>
-          <CameraScanner setUploadUri={setUploadUri} />
-        </View>
-        <View style={styles.cameraInstructions}>
-          <Text style={styles.instructionsTitle}>Position your food in the frame</Text>
-          <Text style={styles.instructionsText}>Make sure the food is well-lit and clearly visible</Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>AI Food Scanner</Text>
-        <TouchableOpacity style={styles.historyButton}>
-          <MaterialIcons name="history" size={24} color="white" />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Food Scanner</Text>
+        <View style={styles.headerRightPlaceholder} />
       </View>
 
-      <View style={styles.cameraSection}>
-        {selectedImage ? (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: selectedImage }} style={styles.capturedImage} />
-            <TouchableOpacity style={styles.retakeButton} onPress={handleNewScan}>
-              <MaterialIcons name="refresh" size={20} color="white" />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.cameraPlaceholder} onPress={handleImageCapture}>
-            <View style={styles.cameraIcon}>
-              <MaterialIcons name="camera-alt" size={48} color="#a855f7" />
-            </View>
-            <Text style={styles.cameraText}>Tap to capture food</Text>
-            <Text style={styles.cameraSubtext}>or upload from gallery</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.galleryButton} onPress={handleImageCapture}>
-          <MaterialIcons name="photo-library" size={24} color="#a855f7" />
-          <Text style={styles.galleryButtonText}>Gallery</Text>
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeTab === 'image' && styles.activeTab
+          ]}
+          onPress={() => setActiveTab('image')}
+        >
+          <MaterialIcons 
+            name="photo-library" 
+            size={20} 
+            color={activeTab === 'image' ? '#a855f7' : '#6b7280'} 
+          />
+          <Text style={[
+            styles.tabText,
+            activeTab === 'image' && styles.activeTabText
+          ]}>
+            Image Scan
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[
-            styles.scanButton,
-            (!selectedImage || isScanning) && styles.scanButtonDisabled
+            styles.tabButton,
+            activeTab === 'text' && styles.activeTab
           ]}
-          onPress={handleScanFood}
-          disabled={!selectedImage || isScanning}
+          onPress={() => setActiveTab('text')}
         >
-          {isScanning ? (
-            <View style={styles.scanningContainer}>
-              <ActivityIndicator size="small" color="white" />
-              <Text style={styles.scanButtonText}>Analyzing...</Text>
-            </View>
-          ) : (
-            <>
-              <MaterialIcons name="scanner" size={24} color="white" />
-              <Text style={styles.scanButtonText}>Scan Food</Text>
-            </>
-          )}
+          <MaterialIcons 
+            name="text-fields" 
+            size={20} 
+            color={activeTab === 'text' ? '#a855f7' : '#6b7280'} 
+          />
+          <Text style={[
+            styles.tabText,
+            activeTab === 'text' && styles.activeTabText
+          ]}>
+            Text Input
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {isScanning && (
-        <View style={styles.scanningProgress}>
-          <View style={styles.progressCard}>
-            <View style={styles.progressIcon}>
-              <MaterialIcons name="psychology" size={32} color="#a855f7" />
+      {/* Image Tab Content */}
+      {activeTab === 'image' && (
+        <View style={styles.tabContent}>
+          <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
+            <MaterialIcons 
+              name={image ? "image" : "photo-library"} 
+              size={24} 
+              color="#a855f7" 
+            />
+            <Text style={styles.uploadButtonText}>
+              {image ? "Change Image" : "Select Food Image"}
+            </Text>
+          </TouchableOpacity>
+
+          {image && (
+            <View style={styles.imagePreviewContainer}>
+              <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+              <TouchableOpacity 
+                style={styles.removeImageButton} 
+                onPress={() => setImage(null)}
+              >
+                <MaterialIcons name="close" size={20} color="white" />
+              </TouchableOpacity>
             </View>
-            <Text style={styles.progressTitle}>AI is analyzing your food...</Text>
-            <Text style={styles.progressSubtitle}>Detecting allergens and ingredients</Text>
-            <View style={styles.progressBar}>
-              <View style={styles.progressBarFill} />
-            </View>
-          </View>
+          )}
         </View>
       )}
 
-      {showResult && scanResult && (
+      {/* Text Tab Content */}
+      {activeTab === 'text' && (
+        <View style={styles.tabContent}>
+          <View style={styles.inputContainer}>
+            <View style={styles.inputLabelContainer}>
+              <MaterialIcons name="restaurant" size={20} color="#6b7280" />
+              <Text style={styles.inputLabel}>FOOD NAME</Text>
+            </View>
+            <TextInput
+              style={styles.inputField}
+              placeholder="e.g., Peanut Soup with bread"
+              placeholderTextColor="#4b5563"
+              value={foodName}
+              onChangeText={setFoodName}
+              multiline
+            />
+          </View>
+          <Text style={styles.inputHint}>
+            <MaterialIcons name="lightbulb" size={14} color="#f59e0b" /> 
+            Be specific for better results
+          </Text>
+        </View>
+      )}
+
+      {/* Submit Button */}
+      <TouchableOpacity
+        style={[
+          styles.scanButton,
+          ((activeTab === 'image' && !image) || 
+           (activeTab === 'text' && !foodName.trim()) || 
+           loading) && styles.scanButtonDisabled
+        ]}
+        onPress={submitScan}
+        disabled={
+          (activeTab === 'image' && !image) || 
+          (activeTab === 'text' && !foodName.trim()) || 
+          loading
+        }
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="white" />
+        ) : (
+          <MaterialIcons name="scanner" size={24} color="white" />
+        )}
+        <Text style={styles.scanButtonText}>
+          {loading ? 'Analyzing...' : activeTab === 'image' ? 'Scan Image' : 'Analyze Text'}
+        </Text>
+      </TouchableOpacity>
+
+      {/* Results Section */}
+      {result && (
         <View style={styles.resultsSection}>
           <View style={styles.resultHeader}>
-            <MaterialIcons name="science" size={24} color="#10b981" />
-            <Text style={styles.resultTitle}>Analysis Complete</Text>
+            <MaterialIcons 
+              name={activeTab === 'image' ? "image-search" : "text-fields"} 
+              size={24} 
+              color="#10b981" 
+            />
+            <Text style={styles.resultTitle}>
+              {activeTab === 'image' ? 'Image Analysis' : 'Text Analysis'}
+            </Text>
           </View>
 
           <View style={styles.resultCard}>
             <View style={styles.resultCardHeader}>
               <MaterialIcons name="restaurant" size={20} color="#3b82f6" />
-              <Text style={styles.resultCardTitle}>Detected Food</Text>
+              <Text style={styles.resultCardTitle}>DETECTED FOOD</Text>
             </View>
-            <Text style={styles.foodName}>{scanResult.food_name}</Text>
+            <Text style={styles.foodName}>{result.food_name || 'Unknown Food'}</Text>
           </View>
 
-          <View style={[styles.resultCard, { borderLeftColor: getRiskColor(scanResult.risk_level) }]}>
+          <View style={[styles.resultCard, { borderLeftColor: getRiskColor(result.risk_level) }]}>
             <View style={styles.resultCardHeader}>
               <MaterialIcons 
-                name={getRiskIcon(scanResult.risk_level)} 
+                name={getRiskIcon(result.risk_level)} 
                 size={20} 
-                color={getRiskColor(scanResult.risk_level)} 
+                color={getRiskColor(result.risk_level)} 
               />
-              <Text style={styles.resultCardTitle}>Risk Level</Text>
+              <Text style={styles.resultCardTitle}>RISK LEVEL</Text>
             </View>
             <View style={styles.riskContainer}>
-              <Text style={[styles.riskLevel, { color: getRiskColor(scanResult.risk_level) }]}>
-                {scanResult.risk_level.toUpperCase()}
+              <Text style={[styles.riskLevel, { color: getRiskColor(result.risk_level) }]}>
+                {result.risk_level?.toUpperCase() || 'UNKNOWN'}
               </Text>
-              <View style={styles.confidenceContainer}>
+              {/* <View style={styles.confidenceContainer}>
                 <Text style={styles.confidenceLabel}>Confidence: </Text>
                 <Text style={styles.confidenceValue}>
-                  {Math.round(scanResult.confidence * 100)}%
+                  {result.confidence ? Math.round(result.confidence * 100) : 0}%
                 </Text>
-              </View>
+              </View> */}
             </View>
           </View>
 
           <View style={styles.resultCard}>
             <View style={styles.resultCardHeader}>
               <MaterialIcons name="warning" size={20} color="#f59e0b" />
-              <Text style={styles.resultCardTitle}>Detected Allergens</Text>
+              <Text style={styles.resultCardTitle}>DETECTED ALLERGENS</Text>
             </View>
             <View style={styles.allergensContainer}>
-              {scanResult.detected_allergen.split(', ').map((allergen, index) => (
+              {result.detected_allergen?.split(', ').map((allergen, index) => (
                 <View key={index} style={styles.allergenTag}>
                   <MaterialIcons name="report-problem" size={16} color="#ef4444" />
                   <Text style={styles.allergenText}>{allergen.trim()}</Text>
                 </View>
               ))}
             </View>
-          </View>
-
-          <View style={styles.timestampCard}>
-            <MaterialIcons name="schedule" size={16} color="#6b7280" />
-            <Text style={styles.timestampText}>
-              Scanned on {formatDate(scanResult.created_at)}
-            </Text>
-          </View>
-
-          <View style={styles.resultActions}>
-            <TouchableOpacity style={styles.saveButton}>
-              <MaterialIcons name="bookmark" size={20} color="white" />
-              <Text style={styles.saveButtonText}>Save Result</Text>
-            </TouchableOpacity>
             
-            <TouchableOpacity style={styles.shareButton}>
-              <MaterialIcons name="share" size={20} color="#a855f7" />
-              <Text style={styles.shareButtonText}>Share</Text>
-            </TouchableOpacity>
           </View>
         </View>
       )}
 
+      {/* Tips Section */}
       <View style={styles.tipsSection}>
-        <Text style={styles.tipsTitle}>📸 Scanning Tips</Text>
+        <Text style={styles.tipsTitle}>
+          {activeTab === 'image' ? '📸 Image Tips' : '📝 Text Tips'}
+        </Text>
         <View style={styles.tipsList}>
-          <Text style={styles.tipItem}>• Ensure good lighting for better results</Text>
-          <Text style={styles.tipItem}>• Capture the entire food item</Text>
-          <Text style={styles.tipItem}>• Keep the camera steady</Text>
-          <Text style={styles.tipItem}>• Avoid blurry or dark images</Text>
+          {activeTab === 'image' ? (
+            <>
+              <Text style={styles.tipItem}>• Use clear, well-lit food photos</Text>
+              <Text style={styles.tipItem}>• Capture the entire dish</Text>
+              <Text style={styles.tipItem}>• Avoid blurry or dark images</Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.tipItem}>• Include all ingredients</Text>
+              <Text style={styles.tipItem}>• Specify cooking methods</Text>
+              <Text style={styles.tipItem}>• Mention brands if relevant</Text>
+            </>
+          )}
         </View>
       </View>
     </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -304,53 +328,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f0f14',
   },
   scrollContent: {
-    paddingBottom: 30,
-  },
-  cameraHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
-    backgroundColor: '#0f0f14',
-    zIndex: 10,
-  },
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  cameraInstructions: {
-    position: 'absolute',
-    bottom: 120,
-    left: 20,
-    right: 20,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  instructionsTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  instructionsText: {
-    fontSize: 14,
-    color: '#9ca3af',
-    textAlign: 'center',
-  },
-  placeholder: {
-    width: 44,
-    height: 44,
+    paddingBottom: 40,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   backButton: {
     width: 44,
@@ -365,100 +351,124 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: 'white',
   },
-  historyButton: {
+  headerRightPlaceholder: {
     width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1f2937',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  cameraSection: {
-    paddingHorizontal: 20,
-    marginBottom: 30,
-  },
-  cameraPlaceholder: {
-    height: 300,
-    borderRadius: 20,
-    backgroundColor: '#1f2937',
-    borderWidth: 2,
-    borderColor: '#374151',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: 'rgba(168, 85, 247, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  cameraText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
-    marginBottom: 4,
-  },
-  cameraSubtext: {
-    fontSize: 14,
-    color: '#9ca3af',
-  },
-  imageContainer: {
-    position: 'relative',
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  capturedImage: {
-    width: '100%',
-    height: 300,
-    borderRadius: 20,
-  },
-  retakeButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionButtons: {
+  tabContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 15,
-    marginBottom: 30,
+    marginHorizontal: 24,
+    marginBottom: 24,
+    backgroundColor: '#1f2937',
+    borderRadius: 12,
+    padding: 4,
   },
-  galleryButton: {
+  tabButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  activeTab: {
+    backgroundColor: '#111827',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  activeTabText: {
+    color: '#a855f7',
+  },
+  tabContent: {
+    marginHorizontal: 24,
+    marginBottom: 24,
+  },
+  inputContainer: {
+    backgroundColor: '#1f2937',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  inputLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  inputLabel: {
+    fontSize: 12,
+    color: '#9ca3af',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    marginLeft: 8,
+  },
+  inputField: {
+    fontSize: 16,
+    color: 'white',
+    fontWeight: '600',
+    padding: 0,
+    marginTop: 4,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  inputHint: {
+    color: '#f59e0b',
+    fontSize: 12,
+    marginTop: 8,
+    marginLeft: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#1f2937',
     paddingVertical: 16,
+    paddingHorizontal: 24,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#a855f7',
-    gap: 8,
+    gap: 12,
   },
-  galleryButtonText: {
+  uploadButtonText: {
     color: '#a855f7',
     fontSize: 16,
     fontWeight: '600',
   },
+  imagePreviewContainer: {
+    position: 'relative',
+    marginTop: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  imagePreview: {
+    width: '100%',
+    height: 250,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   scanButton: {
-    flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#a855f7',
     paddingVertical: 16,
     borderRadius: 12,
-    gap: 8,
+    marginHorizontal: 24,
+    marginBottom: 24,
+    gap: 12,
     shadowColor: '#a855f7',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -473,62 +483,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  scanningContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  scanningProgress: {
-    paddingHorizontal: 20,
-    marginBottom: 30,
-  },
-  progressCard: {
-    backgroundColor: '#1f2937',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-  },
-  progressIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: 'rgba(168, 85, 247, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  progressTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
-    marginBottom: 4,
-  },
-  progressSubtitle: {
-    fontSize: 14,
-    color: '#9ca3af',
-    marginBottom: 20,
-  },
-  progressBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: '#374151',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressBarFill: {
-    width: '60%',
-    height: '100%',
-    backgroundColor: '#a855f7',
-  },
   resultsSection: {
-    paddingHorizontal: 20,
-    marginBottom: 30,
+    paddingHorizontal: 24,
+    marginBottom: 24,
   },
   resultHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    gap: 8,
+    gap: 12,
   },
   resultTitle: {
     fontSize: 20,
@@ -550,7 +513,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   resultCardTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: '#9ca3af',
     textTransform: 'uppercase',
@@ -604,59 +567,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ef4444',
   },
-  timestampCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#111827',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginBottom: 20,
-    gap: 8,
-  },
-  timestampText: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  resultActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  saveButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#10b981',
-    paddingVertical: 14,
-    borderRadius: 12,
-    gap: 8,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  shareButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#a855f7',
-    gap: 8,
-  },
-  shareButtonText: {
-    color: '#a855f7',
-    fontSize: 14,
-    fontWeight: '600',
-  },
   tipsSection: {
-    paddingHorizontal: 20,
-    marginTop: 20,
+    paddingHorizontal: 24,
   },
   tipsTitle: {
     fontSize: 16,
@@ -676,3 +588,5 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 });
+
+export default ScanFoodScreen;

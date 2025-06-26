@@ -38,6 +38,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <FontAwesome name="user" size={28} color={color} />,
+        }}
+      />
+      
+      <Tabs.Screen
         name="food_scan"
         options={{
           title: '',
@@ -47,10 +55,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="scan_history"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <FontAwesome name="user" size={28} color={color} />,
+          title: 'Scan History',
+          tabBarIcon: ({ color }) => <FontAwesome name="history" size={28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="save_money"
+        options={{
+          title: 'Save money',
+          tabBarIcon: ({ color }) => <FontAwesome name="bank" size={28} color={color} />,
         }}
       />
     </Tabs>

@@ -15,7 +15,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link, useRouter } from 'expo-router';
 import api from '@/assets/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import Loader from "@/components/ui/Loader"
 const { width, height } = Dimensions.get('window');
 
 function EmergencyProfileScreen() {
@@ -24,34 +24,40 @@ function EmergencyProfileScreen() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+
+  
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = await AsyncStorage.getItem('access_token');
-        if (!token) {
-          Alert.alert(
-            'You must be logged in to access this page',
-            'Please log in to continue.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Login here', onPress: () => router.push('/login') },
-            ]
-          );
-          return;
+    setTimeout(() => {
+      const fetchProfile = async () => {
+        try {
+          const token = await AsyncStorage.getItem('access_token');
+          if (!token) {
+            Alert.alert(
+              'You must be logged in to access this page',
+              'Please log in to continue.',
+              [
+                // { text: 'Cancel', style: 'cancel' },
+                { text: 'Login here', onPress: () => router.push('/login') },
+              ]
+            );
+            return;
+          }
+  
+          const res = await api.get('api/emergency-profile/');
+          setProfile(res.data);
+        } catch (error) {
+          console.error('Profile fetch failed:', error);
+          Alert.alert('Error', 'Failed to load profile');
+        } finally {
+          setLoading(false);
         }
-
-        const res = await api.get('api/emergency-profile/');
-        setProfile(res.data);
-      } catch (error) {
-        console.error('Profile fetch failed:', error);
-        Alert.alert('Error', 'Failed to load profile');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, []);
+      };
+  
+      fetchProfile();
+  
+    
+    }, 3000);
+     }, []);
 
   const handleCallEmergencyContact = () => {
     if (!profile) return;
@@ -77,7 +83,7 @@ function EmergencyProfileScreen() {
     Alert.alert('Share Profile', 'Share with healthcare professionals.');
   };
 
-  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 100 }} />;
+  if (loading) return <Loader message="Loading your medical records..." />  ;
   if (!profile) return <Text style={{ color: '#fff', textAlign: 'center', marginTop: 100 }}>No emergency profile found.</Text>;
 
   const medicalSections = [
@@ -142,11 +148,13 @@ function EmergencyProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Link href="/profile" asChild>
-            <TouchableOpacity style={styles.backButton}>
+          {/* <Link href="/profile" asChild> */}
+          <TouchableOpacity style={styles.backButton} onPress={() => {
+            router.back()
+            }}>
               <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
-          </Link>
+          {/* </Link> */}
           <Text style={styles.headerTitle}>Emergency Profile</Text>
           <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
             <MaterialIcons name="share" size={24} color="#a855f7" />

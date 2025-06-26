@@ -13,5 +13,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "app/register.jsx", "app/login.jsx", "app/health_setup.jsx", "app/food_scanner.jsx", "app/emergency-profile.jsx", "app/(tabs)/index.jsx", "app/(tabs)/food_scan.tsx"  ]
+, "app/register.jsx", "app/login.jsx", "app/health_setup.jsx", "app/food_scanner.jsx", "app/emergency-profile.jsx", "app/(tabs)/index.jsx", "app/(tabs)/food_scan.jsx"  ]
 }

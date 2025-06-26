@@ -12,6 +12,7 @@ import {
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
@@ -58,6 +59,7 @@ const quickSettings = [
 
 export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter()
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -203,7 +205,10 @@ export default function ProfileScreen() {
             ) : (
               <>
                 <MaterialIcons name="logout" size={20} color="#ef4444" />
-                <Text style={styles.logoutButtonText}>Sign Out</Text>
+                  <Text style={styles.logoutButtonText} onPress={() => {
+                    router.push("/login")
+                    
+                }}>Sign Out</Text>
               </>
             )}
           </TouchableOpacity>

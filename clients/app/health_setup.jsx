@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,25 @@ import {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Link, useRouter } from 'expo-router';
 import api from "@/assets/api";
+
+const InputField = React.memo(({ label, value, field, icon, multiline = false, keyboardType = 'default', updateHealthData }) => (
+  <View style={styles.inputContainer}>
+    <View style={styles.inputLabelContainer}>
+      <MaterialIcons name={icon} size={20} color="#6b7280" style={styles.inputIcon} />
+      <Text style={styles.inputLabel}>{label}</Text>
+    </View>
+    <TextInput
+      style={[styles.inputField, multiline && styles.multilineInput]}
+      value={value}
+      onChangeText={(text) => updateHealthData(field, text)}
+      placeholder={`Enter ${label.toLowerCase()}`}
+      placeholderTextColor="#4b5563"
+      multiline={multiline}
+      keyboardType={keyboardType}
+    />
+  </View>
+));
+InputField.displayName = "InputField";
 
 const HealthSetupScreen = () => {
   const [healthData, setHealthData] = useState({
@@ -32,12 +51,12 @@ const HealthSetupScreen = () => {
 
   const router = useRouter();
 
-  const updateHealthData = (field, value) => {
+  const updateHealthData = useCallback((field, value) => {
     setHealthData((prev) => ({
       ...prev,
       [field]: value,
     }));
-  };
+  }, []);
 
   const handleContinue = async () => {
     try {
@@ -49,30 +68,12 @@ const HealthSetupScreen = () => {
       const response = await api.post("/api/emergency-profile/", formattedData);
       console.log("Profile saved:", response.data);
       Alert.alert("Success", "Health profile setup completed!");
-      router.push('/profile');
+      router.push('/emergency-profile');
     } catch (error) {
       console.log("Error saving profile:", error?.response?.data || error.message);
       Alert.alert("Error", "Failed to save profile. Please check all fields.");
     }
   };
-
-  const InputField = ({ label, value, field, icon, multiline = false, keyboardType = 'default' }) => (
-    <View style={styles.inputContainer}>
-      <View style={styles.inputLabelContainer}>
-        <MaterialIcons name={icon} size={20} color="#6b7280" style={styles.inputIcon} />
-        <Text style={styles.inputLabel}>{label}</Text>
-      </View>
-      <TextInput
-        style={[styles.inputField, multiline && styles.multilineInput]}
-        value={value}
-        onChangeText={(text) => updateHealthData(field, text)}
-        placeholder={`Enter ${label.toLowerCase()}`}
-        placeholderTextColor="#4b5563"
-        multiline={multiline}
-        keyboardType={keyboardType}
-      />
-    </View>
-  );
 
   const fieldIcons = {
     blood_type: "bloodtype",
@@ -96,11 +97,13 @@ const HealthSetupScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Header */}
         <View style={styles.header}>
-          <Link href="/profile" asChild>
-            <TouchableOpacity style={styles.backButton}>
+          {/* <Link href="/emergency-profile" asChild> */}
+            <TouchableOpacity style={styles.backButton} onPress={() => {
+              router.back()
+            }}>
               <MaterialIcons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
-          </Link>
+          {/* </Link> */}
           <Text style={styles.headerTitle}>Setup Health Profile</Text>
           <View style={styles.shareButtonPlaceholder} />
         </View>
@@ -115,23 +118,29 @@ const HealthSetupScreen = () => {
           </View>
           
           <InputField
+            key="blood_type"
             label="Blood Type"
             value={healthData.blood_type}
             field="blood_type"
             icon={fieldIcons.blood_type}
+            updateHealthData={updateHealthData}
           />
           <InputField
+            key="genotype"
             label="Genotype"
             value={healthData.genotype}
             field="genotype"
             icon={fieldIcons.genotype}
+            updateHealthData={updateHealthData}
           />
           <InputField
+            key="weight"
             label="Weight (kg)"
             value={healthData.weight}
             field="weight"
             icon={fieldIcons.weight}
             keyboardType="numeric"
+            updateHealthData={updateHealthData}
           />
         </View>
 
@@ -144,32 +153,40 @@ const HealthSetupScreen = () => {
           </View>
           
           <InputField
+            key="allergies"
             label="Allergies"
             value={healthData.allergies}
             field="allergies"
             icon={fieldIcons.allergies}
             multiline={true}
+            updateHealthData={updateHealthData}
           />
           <InputField
+            key="conditions"
             label="Conditions"
             value={healthData.conditions}
             field="conditions"
             icon={fieldIcons.conditions}
             multiline={true}
+            updateHealthData={updateHealthData}
           />
           <InputField
+            key="medications"
             label="Medications"
             value={healthData.medications}
             field="medications"
             icon={fieldIcons.medications}
             multiline={true}
+            updateHealthData={updateHealthData}
           />
           <InputField
+            key="vaccination_history"
             label="Vaccination History"
             value={healthData.vaccination_history}
             field="vaccination_history"
             icon={fieldIcons.vaccination_history}
             multiline={true}
+            updateHealthData={updateHealthData}
           />
         </View>
 
@@ -182,17 +199,21 @@ const HealthSetupScreen = () => {
           </View>
           
           <InputField
+            key="emergency_contact_name"
             label="Contact Name"
             value={healthData.emergency_contact_name}
             field="emergency_contact_name"
             icon={fieldIcons.emergency_contact_name}
+            updateHealthData={updateHealthData}
           />
           <InputField
+            key="emergency_contact_phone"
             label="Phone Number"
             value={healthData.emergency_contact_phone}
             field="emergency_contact_phone"
             icon={fieldIcons.emergency_contact_phone}
             keyboardType="phone-pad"
+            updateHealthData={updateHealthData}
           />
         </View>
 
@@ -205,28 +226,36 @@ const HealthSetupScreen = () => {
           </View>
           
           <InputField
+            key="dietary_restrictions"
             label="Dietary Restrictions"
             value={healthData.dietary_restrictions}
             field="dietary_restrictions"
             icon={fieldIcons.dietary_restrictions}
+            updateHealthData={updateHealthData}
           />
           <InputField
+            key="smoking_status"
             label="Smoking Status"
             value={healthData.smoking_status}
             field="smoking_status"
             icon={fieldIcons.smoking_status}
+            updateHealthData={updateHealthData}
           />
           <InputField
+            key="alcohol_consumption"
             label="Alcohol Consumption"
             value={healthData.alcohol_consumption}
             field="alcohol_consumption"
             icon={fieldIcons.alcohol_consumption}
+            updateHealthData={updateHealthData}
           />
           <InputField
+            key="physical_activity_level"
             label="Physical Activity"
             value={healthData.physical_activity_level}
             field="physical_activity_level"
             icon={fieldIcons.physical_activity_level}
+            updateHealthData={updateHealthData}
           />
         </View>
 

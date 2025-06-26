@@ -173,9 +173,9 @@ class FoodAllergyScanView(APIView):
 
                 # Match allergens
                 if singular_allergen in normalized_allergies:
-                    if confidence < 0.5:
+                    if confidence < 0.45:
                         risk = "low"
-                    elif confidence < 0.8:
+                    elif confidence > 0.45 and confidence < 0.7:
                         risk = "medium"
                     else:
                         risk = "high"
