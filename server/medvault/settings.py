@@ -250,3 +250,13 @@ BASE_FRONTEND_URL = "https://medvaults.onrender.com"  # Change to your live URL 
 
 PAYSTACK_PUBLIC_KEY = 'pk_test_f9d4e9c4b70a553a45fd67aea9e4f1429de302cf'
 PAYSTACK_SECRET_KEY = 'sk_test_2de22e65cd85be13d98741474297a8e5bf84dcf5'
+
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env file
+
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')

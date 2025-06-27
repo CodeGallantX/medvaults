@@ -579,9 +579,13 @@ class SendmessageToContact(APIView):
             formatted_number = format_nigerian_number(raw_number)
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
+        
 
-        account_sid = "AC7af9bcfcd17726fc1f2f16a95226eabd"
-        auth_token = "c75a55fcb9b5e115f555ad33fcb85461"
+        from django.conf import settings
+
+
+        account_sid = settings.TWILIO_ACCOUNT_SID
+        auth_token = settings.TWILIO_AUTH_TOKEN
         client = Client(account_sid, auth_token)
 
         user_name = request.user.first_name or request.user.username
