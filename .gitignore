@@ -9,4 +9,4 @@ server/*.pyo
 server/.env
 server/*.log
 server/venv/
-
+server/.env
