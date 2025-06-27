@@ -16,6 +16,8 @@ import { Link, useRouter } from 'expo-router';
 import api from '@/assets/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Loader from "@/components/ui/Loader"
+import { sendEmergencyAlert } from "@/components/Emergency";
+
 const { width, height } = Dimensions.get('window');
 
 function EmergencyProfileScreen() {
@@ -174,7 +176,7 @@ function EmergencyProfileScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#10b981' }]} onPress={handleCallEmergencyContact}>
+          <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#10b981' }]} onPress={sendEmergencyAlert}>
             <MaterialIcons name="phone" size={20} color="#fff" />
             <Text style={styles.actionButtonText}>Call Contact</Text>
           </TouchableOpacity>

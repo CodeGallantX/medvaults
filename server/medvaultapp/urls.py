@@ -21,7 +21,12 @@ urlpatterns = [
     path("your_scan_history/", FoodAllergyScanListView.as_view(), name="scan_history"),
     path('verify-payment/', verify_payment, name='verify_payment'),  # Add this line
     path("your_scan_history/", FoodAllergyScanListView.as_view(), name="scan_history"),
+    path("send_message/", SendmessageToContact.as_view(), name="send_message"),
+    # path("get_location/", GetUserCurrentLocation.as_view(), name="get_location")
+
 
 
 
 ]
+
+

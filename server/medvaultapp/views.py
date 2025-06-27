@@ -536,8 +536,79 @@ def verify_payment(request):
 
 
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from twilio.rest import Client
+# views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from twilio.rest import Client
 
 
+class SendmessageToContact(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request):
+        coords = request.data.get("location", {})
+        lat = coords.get("latitude")
+        lng = coords.get("longitude")
+
+        if not lat or not lng:
+            return Response({"error": "Location data missing."}, status=400)
+
+        profile = request.user.emergencyprofile
+        raw_number = profile.emergency_contact_phone
+
+        def format_nigerian_number(number):
+            number = number.strip()
+            if number.startswith("0"):
+                return "+234" + number[1:]
+            elif number.startswith("+234"):
+                return number
+            raise ValueError("Invalid Nigerian phone number format")
+
+        try:
+            formatted_number = format_nigerian_number(raw_number)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=400)
+
+        account_sid = "AC7af9bcfcd17726fc1f2f16a95226eabd"
+        auth_token = "c75a55fcb9b5e115f555ad33fcb85461"
+        client = Client(account_sid, auth_token)
+
+        user_name = request.user.first_name or request.user.username
+        location_link = f"https://maps.google.com/?q={lat},{lng}"
+        voice_message = f"This is an emergency alert. {user_name} may be in danger. The last known location is {location_link}."
+
+        try:
+            call = client.calls.create(
+                to=formatted_number,
+                from_='+12678057649',
+                twiml=f"<Response><Say voice='alice'>{voice_message}</Say></Response>"
+            )
+
+            sms = client.messages.create(
+                to=formatted_number,
+                from_='+12678057649',
+                body="Emergency Alert:\n" + voice_message
+            )
+
+            return Response({
+                "message": "Emergency alert sent.",
+                "call_sid": call.sid,
+                "sms_sid": sms.sid
+            })
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 
 
