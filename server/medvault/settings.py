@@ -260,10 +260,3 @@ load_dotenv()  # Load environment variables from .env file
 TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER')
-import dj_database_url
-
-
-MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
-
-# Heroku database
-DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
