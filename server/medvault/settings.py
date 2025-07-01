@@ -236,7 +236,7 @@ EMAIL_HOST_PASSWORD = 'yshhvvigaryqlabg'
 DEFAULT_FROM_EMAIL = 'ojugbelelateef2006@gmail.com'  # Default "from" email
 ADMIN_NOTIFICATION_EMAIL = 'ojugbelelateef2006@gmail.com'  # Website owner's email
 CSRF_TRUSTED_ORIGINS = [
-    'https://medvaults.onrender.com',
+    'http://192.168.16.197:8000/',
 ]
 
 
@@ -244,7 +244,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_USER_MODEL = 'medvaultapp.CustomUser'
 
-BASE_FRONTEND_URL = "https://medvaults.onrender.com"  # Change to your live URL later
+BASE_FRONTEND_URL = "http://192.168.16.197:8000"  # Change to your live URL later
 
 
 

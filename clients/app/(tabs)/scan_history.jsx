@@ -1,175 +1,157 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
-  Image,
-  TouchableOpacity,
-  Alert,
   Text,
+  TouchableOpacity,
+  FlatList,
   StyleSheet,
   ActivityIndicator,
-  ScrollView,
+  Image,
+  Alert
 } from 'react-native';
-import * as Sharing from 'expo-sharing';
-import * as MediaLibrary from 'expo-media-library';
-import * as FileSystem from 'expo-file-system';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import api from '@/assets/api';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import api from '../../assets/api';
 
-const QRCodeComponent = () => {
-  const [qrData, setQrData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+const ScanHistoryScreen = () => {
+  const [scans, setScans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
-    fetchQRCode();
+    fetchScanHistory();
   }, []);
 
-  const fetchQRCode = async () => {
-    setLoading(true);
-    setError(null);
+  const fetchScanHistory = async () => {
     try {
-      const response = await api.get('/api/get-qrcode/');
-      if (response.data?.qr_image_url) {
-        setQrData(response.data);
-      } else {
-        setError("No QR code available.");
-      }
+      const res = await api.get('/your_scan_history/');
+      // Sort scans by created_at in descending order (newest first)
+      const sortedScans = [...res.data].sort((a, b) => 
+        new Date(b.created_at) - new Date(a.created_at)
+      );
+      setScans(sortedScans);
     } catch (err) {
-      console.error("API Error:", err);
-      setError("Failed to fetch QR code. Please try again.");
+      console.error('Error fetching scan history:', err);
+      Alert.alert('Error', 'Failed to load scan history');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const saveQRCode = async () => {
-    if (!qrData?.qr_image_url) return;
-
-    try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert("Permission Required", "Allow access to save the QR code.");
-        return;
-      }
-
-      const localUri = FileSystem.documentDirectory + 'qr_code.png';
-      const downloadRes = await FileSystem.downloadAsync(qrData.qr_image_url, localUri);
-
-      await MediaLibrary.saveToLibraryAsync(downloadRes.uri);
-      Alert.alert("Success", "QR code saved to your gallery!");
-    } catch (err) {
-      console.error("Save Error:", err);
-      Alert.alert("Error", "Failed to save QR code.");
-    }
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchScanHistory();
   };
 
-  const shareQRCode = async () => {
-    if (!qrData?.qr_image_url) return;
-
-    try {
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (!isAvailable) {
-        Alert.alert("Sharing not supported on this device.");
-        return;
-      }
-
-      const localUri = FileSystem.documentDirectory + 'qr_code_share.png';
-      const downloadRes = await FileSystem.downloadAsync(qrData.qr_image_url, localUri);
-
-      await Sharing.shareAsync(downloadRes.uri, {
-        dialogTitle: 'Share Your MedVault QR Code',
-        mimeType: 'image/png',
-      });
-    } catch (err) {
-      console.error("Share Error:", err);
-      Alert.alert("Error", "Failed to share QR code.");
-    }
+  const getRiskLevelColor = (riskLevel) => {
+    if (!riskLevel) return '#6b7280'; // Default for no risk
+    const lowerCaseRisk = riskLevel.toLowerCase();
+    if (lowerCaseRisk.includes('high')) return '#ef4444';
+    if (lowerCaseRisk.includes('medium')) return '#f59e0b';
+    if (lowerCaseRisk.includes('low')) return '#10b981';
+    return '#6b7280'; // Default color
   };
+
+  const formatRiskLevelText = (riskLevel) => {
+    if (!riskLevel) return 'No risk detected';
+    if (riskLevel.includes('there are no allergy')) return 'No risk detected';
+    return riskLevel;
+  };
+
+  const renderScanItem = ({ item }) => (
+    <View style={styles.scanCard}>
+      <View style={styles.scanHeader}>
+        <Text style={styles.scanFoodName}>{item.food_name}</Text>
+        <View style={[styles.riskBadge, { backgroundColor: getRiskLevelColor(item.risk_level) }]}>
+          <Text style={styles.riskBadgeText}>
+            {formatRiskLevelText(item.risk_level)}
+          </Text>
+        </View>
+      </View>
+
+      {item.food_image && (
+        <Image 
+          source={{ uri: item.food_image }} 
+          style={styles.foodImage}
+          resizeMode="cover"
+        />
+      )}
+
+      <View style={styles.scanDetails}>
+        {item.detected_allergen && (
+          <View style={styles.detailRow}>
+            <MaterialIcons name="warning" size={18} color="#ef4444" />
+            <Text style={styles.detailText}>
+              Detected: {item.detected_allergen}
+            </Text>
+          </View>
+        )}
+
+
+
+        <View style={styles.detailRow}>
+          <MaterialIcons name="schedule" size={18} color="#6b7280" />
+          <Text style={styles.detailText}>
+            {new Date(item.created_at).toLocaleString()}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#a855f7" />
-        <Text style={styles.loadingText}>Loading QR Code...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <View style={styles.errorCard}>
-          <MaterialIcons name="error-outline" size={24} color="#ef4444" />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={fetchQRCode} style={styles.retryButton}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.loadingText}>Loading scan history...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        {/* QR Code Section Header */}
-        <View style={styles.sectionHeader}>
-          <View style={[styles.sectionIcon, { backgroundColor: '#f5f3ff' }]}>
-            <MaterialIcons name="qr-code" size={20} color="#8b5cf6" />
-          </View>
-          <Text style={styles.sectionTitle}>Emergency QR Code</Text>
-        </View>
-
-        {qrData?.qr_image_url && (
-          <>
-            {/* QR Code Display */}
-            <View style={styles.qrCard}>
-              <Image
-                source={{ uri: qrData.qr_image_url }}
-                style={styles.qrImage}
-                resizeMode="contain"
-              />
-
-
-              <Text style={styles.qrToken}>Token: {qrData.qr_token}</Text>
-            </View>
-
-            {/* Action Buttons */}
-            <View style={styles.actionButtons}>
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#8b5cf6' }]}
-                onPress={saveQRCode}
-              >
-                <MaterialIcons name="save-alt" size={20} color="#fff" />
-                <Text style={styles.actionButtonText}>Save to Device</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: '#10b981' }]}
-                onPress={shareQRCode}
-              >
-                <MaterialIcons name="share" size={20} color="#fff" />
-                <Text style={styles.actionButtonText}>Share QR Code</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Notice */}
-            <View style={styles.noticeCard}>
-              <View style={styles.noticeIcon}>
-                <MaterialIcons name="info" size={20} color="#3b82f6" />
-              </View>
-              <View style={styles.noticeContent}>
-                <Text style={styles.noticeTitle}>QR Code Usage</Text>
-                <Text style={styles.noticeText}>
-                  This QR code contains your emergency medical information.
-                  Share it with healthcare providers in case of emergency.
-                </Text>
-              </View>
-            </View>
-          </>
-        )}
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Your Scan History</Text>
+        <TouchableOpacity 
+          style={styles.refreshButton}
+          onPress={onRefresh}
+          disabled={refreshing}
+        >
+          {refreshing ? (
+            <ActivityIndicator size="small" color="#a855f7" />
+          ) : (
+            <Ionicons name="refresh" size={20} color="#a855f7" />
+          )}
+        </TouchableOpacity>
       </View>
-    </ScrollView>
+
+      {/* Content */}
+      <FlatList
+        data={scans}
+        renderItem={renderScanItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <MaterialIcons name="info-outline" size={48} color="#6b7280" />
+            <Text style={styles.emptyText}>No scan history found</Text>
+            <Text style={styles.emptySubtext}>Scan some food to see your history here</Text>
+          </View>
+        }
+      />
+    </View>
   );
 };
 
@@ -177,13 +159,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f0f14',
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    
   },
   loadingContainer: {
     flex: 1,
@@ -192,136 +167,112 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f0f14',
   },
   loadingText: {
-    color: '#fff',
+    color: '#b9b9e3',
     marginTop: 16,
-    fontSize: 16,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#0f0f14',
-    padding: 24,
-  },
-  errorCard: {
-    backgroundColor: '#1f2937',
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#374151',
-  },
-  errorText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-    marginVertical: 16,
-  },
-  retryButton: {
-    backgroundColor: '#a855f7',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  sectionHeader: {
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    padding: 24,
+    paddingTop: 60,
+    backgroundColor: '#0f0f14',
   },
-  sectionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1f2937',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
-  sectionTitle: {
-    fontSize: 18,
+  headerTitle: {
+    fontSize: 20,
     fontWeight: '700',
     color: '#fff',
+    marginHorizontal: 16,
   },
-  qrCard: {
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1f2937',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  scanCard: {
     backgroundColor: '#1f2937',
     borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-    marginBottom: 20,
+    padding: 16,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#374151',
   },
-  qrImage: {
-    width: 200,
-    height: 200,
-    marginBottom: 16,
-  },
-  qrToken: {
-    fontSize: 12,
-    color: '#9ca3af',
-    fontFamily: 'monospace',
-    textAlign: 'center',
-  },
-  actionButtons: {
+  scanHeader: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    paddingVertical: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 12,
   },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 14,
+  scanFoodName: {
+    fontSize: 18,
     fontWeight: '600',
+    color: '#fff',
+    flex: 1,
+  },
+  riskBadge: {
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
     marginLeft: 8,
   },
-  noticeCard: {
-    flexDirection: 'row',
-    backgroundColor: '#1e3a8a',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#3b82f6',
-  },
-  noticeIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  noticeContent: {
-    flex: 1,
-  },
-  noticeTitle: {
-    fontSize: 16,
+  riskBadgeText: {
+    fontSize: 12,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 4,
   },
-  noticeText: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
-    lineHeight: 18,
+  foodImage: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 12,
+    backgroundColor: '#374151',
+  },
+  scanDetails: {
+    marginTop: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailText: {
+    fontSize: 14,
+    color: '#9ca3af',
+    marginLeft: 8,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    color: '#9ca3af',
+    fontSize: 18,
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    color: '#6b7280',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
 
-export default QRCodeComponent;
+export default ScanHistoryScreen;

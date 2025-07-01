@@ -30,6 +30,7 @@
     "expo-location": "^18.1.5",
     "expo-media-library": "^17.1.7",
     "expo-router": "~5.1.0",
+    "expo-sensors": "~14.1.4",
     "expo-sharing": "^13.1.5",
     "expo-splash-screen": "~0.30.9",
     "expo-status-bar": "~2.2.3",
@@ -47,7 +48,7 @@
     "react-native-shake": "^6.7.7",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
-    "expo-sensors": "~14.1.4"
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

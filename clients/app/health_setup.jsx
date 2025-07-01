@@ -99,7 +99,7 @@ const HealthSetupScreen = () => {
         <View style={styles.header}>
           {/* <Link href="/emergency-profile" asChild> */}
             <TouchableOpacity style={styles.backButton} onPress={() => {
-              router.back()
+              router.push("/(tabs)/")
             }}>
               <MaterialIcons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>

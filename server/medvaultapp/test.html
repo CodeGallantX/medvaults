@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"],
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="file"] {
+            border: 1px dashed #ddd;
+            padding: 10px;
+            width: 100%;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Hospital Registration</h1>
+    <form id="hospitalForm">
+        <h2>User Information</h2>
+        <div class="form-group">
+            <label for="username">Username*</label>
+            <input type="text" id="username" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email*</label>
+            <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName">
+        </div>
+        <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName">
+        </div>
+        <div class="form-group">
+            <label for="password">Password*</label>
+            <input type="password" id="password" required>
+        </div>
+        <div class="form-group">
+            <label for="password2">Confirm Password*</label>
+            <input type="password" id="password2" required>
+        </div>
+        <div class="form-group">
+            <label for="profilePicture">Profile Picture</label>
+            <input type="file" id="profilePicture" accept="image/*">
+        </div>
+
+        <h2>Hospital Information</h2>
+        <div class="form-group">
+            <label for="hospitalName">Hospital Name*</label>
+            <input type="text" id="hospitalName" required>
+        </div>
+        <div class="form-group">
+            <label for="registrationNumber">Registration Number*</label>
+            <input type="text" id="registrationNumber" required>
+        </div>
+        <div class="form-group">
+            <label for="licenseFile">License File*</label>
+            <input type="file" id="licenseFile" required>
+        </div>
+        <div class="form-group">
+            <label for="address">Address*</label>
+            <textarea id="address" rows="3" required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="phoneNumber">Phone Number*</label>
+            <input type="tel" id="phoneNumber" required>
+        </div>
+        <div class="form-group">
+            <label for="services">Services Offered (comma separated)</label>
+            <input type="text" id="services">
+        </div>
+
+        <button type="submit">Register Hospital</button>
+    </form>
+
+    <div id="response"></div>
+
+    <script>
+    document.getElementById('hospitalForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Get form values
+            const formData = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                first_name: document.getElementById('firstName').value,
+                last_name: document.getElementById('lastName').value,
+                password: document.getElementById('password').value,
+                password2: document.getElementById('password2').value,
+                hospital_name: document.getElementById('hospitalName').value,
+                registration_number: document.getElementById('registrationNumber').value,
+                address: document.getElementById('address').value,
+                phone_number: document.getElementById('phoneNumber').value,
+                services: document.getElementById('services').value
+            };
+
+            // Validate passwords match
+            if (formData.password !== formData.password2) {
+                showResponse('Passwords do not match', 'error');
+                return;
+            }
+
+            // Create FormData for file uploads
+            const postData = new FormData();
+            postData.append('user', JSON.stringify({
+                username: formData.username,
+                email: formData.email,
+                first_name: formData.first_name,
+                last_name: formData.last_name,
+                password: formData.password,
+                password2: formData.password2
+            }));
+
+            // Append files if they exist
+            const profilePic = document.getElementById('profilePicture').files[0];
+            const licenseFile = document.getElementById('licenseFile').files[0];
+
+            if (profilePic) {
+                postData.append('profile_picture', profilePic);
+            }
+            if (licenseFile) {
+                postData.append('license_file', licenseFile);
+            }
+
+            // Append other fields
+            postData.append('hospital_name', formData.hospital_name);
+            postData.append('registration_number', formData.registration_number);
+            postData.append('address', formData.address);
+            postData.append('phone_number', formData.phone_number);
+            postData.append('services', formData.services);
+
+            try {
+                const response = await fetch('http://localhost:8000/hospital/register/', {
+                    method: 'POST',
+                    body: postData
+                    // Don't set Content-Type header - let the browser set it with the boundary
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResponse(`Hospital registered successfully! Hospital ID: ${data.data.hospital_id}`, 'success');
+                    // Optionally reset the form
+                    document.getElementById('hospitalForm').reset();
+                } else {
+                    showResponse(`Error: ${data.error || 'Registration failed'}`, 'error');
+                    if (data.details) {
+                        console.error('Details:', data.details);
+                    }
+                }
+            } catch (error) {
+                showResponse(`Network error: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        });
+
+        function showResponse(message, type) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = message;
+            responseDiv.className = type;
+            responseDiv.style.display = 'block';
+
+            // Scroll to response
+            responseDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    
+    </script>
+</body>
+
+</html>

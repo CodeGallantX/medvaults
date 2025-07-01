@@ -7,6 +7,8 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
+import { UserProvider } from '@/providers/UserProvider';
+
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import ShakeDetector from "@/components/MyShakeComponent ";
@@ -25,16 +27,19 @@ export default function RootLayout() {
     // <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
     <>
       <ShakeDetector />
+      <UserProvider>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+          <Stack.Screen options={{ headerShown: false }} name="register" />
+          <Stack.Screen options={{ headerShown: false }} name="login" />
+          <Stack.Screen options={{ headerShown: false }} name="food_scanner" />
+          <Stack.Screen options={{ headerShown: false }} name="emergency-profile" />
+          <Stack.Screen options={{ headerShown: false }} name="health_setup" />
+        </Stack>
+      </UserProvider>
 
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-        <Stack.Screen options={{ headerShown: false }} name="register" />
-        <Stack.Screen options={{ headerShown: false }} name="login" />
-        <Stack.Screen options={{ headerShown: false }} name="food_scanner" />
-        <Stack.Screen options={{ headerShown: false }} name="emergency-profile" />
-        <Stack.Screen options={{ headerShown: false }} name="health_setup" />
-      </Stack>
+ 
       <StatusBar style="light" />
     </>
     // </ThemeProvider>

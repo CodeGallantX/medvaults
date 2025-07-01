@@ -10,9 +10,9 @@ export default function ShakeDetector() {
       const { x = 0, y = 0, z = 0 } = accelerationIncludingGravity ?? {};
       const totalForce = Math.abs(x) + Math.abs(y) + Math.abs(z);
 
-      if (totalForce > 50) {
+      if (totalForce > 30) {
         const now = Date.now();
-        if (now - lastShake > 9000) {
+        if (now - lastShake > 2000) {
           setLastShake(now);
           console.log('Shake detected!');
           SendEmergencyAlert(); // ✅ call the function, don't render it

@@ -13,6 +13,8 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Link } from 'expo-router';
 import { useRouter } from 'expo-router';
+import { useUserData } from '@/hooks/useUserData';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -61,6 +63,15 @@ export default function ProfileScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter()
 
+  const { 
+    username, 
+    email, 
+    fullName, 
+    lastName,
+    firstName,
+    error 
+  } = useUserData()
+
   const handleLogout = async () => {
     setIsLoading(true);
     // Simulate logout process
@@ -102,10 +113,10 @@ export default function ProfileScreen() {
           
           <View style={styles.profileInfo}>
             <Text style={styles.fullName}>
-              {userData.first_name} {userData.last_name}
+              Ojugbele Abdullateef
             </Text>
-            <Text style={styles.username}>@{userData.username}</Text>
-            <Text style={styles.email}>{userData.email}</Text>
+            <Text style={styles.username}>@{username}</Text>
+            <Text style={styles.email}>{email}</Text>
           </View>
         </View>
 
@@ -137,7 +148,7 @@ export default function ProfileScreen() {
                 <MaterialIcons name="person" size={20} color="#6b7280" />
                 <Text style={styles.infoLabelText}>First Name</Text>
               </View>
-              <Text style={styles.infoValue}>{userData.first_name}</Text>
+              <Text style={styles.infoValue}>Abdullateef </Text>
             </View>
           </View>
 
@@ -147,7 +158,7 @@ export default function ProfileScreen() {
                 <MaterialIcons name="person-outline" size={20} color="#6b7280" />
                 <Text style={styles.infoLabelText}>Last Name</Text>
               </View>
-              <Text style={styles.infoValue}>{userData.last_name}</Text>
+              <Text style={styles.infoValue}>Ojugbele</Text>
             </View>
           </View>
 
@@ -157,7 +168,7 @@ export default function ProfileScreen() {
                 <MaterialIcons name="alternate-email" size={20} color="#6b7280" />
                 <Text style={styles.infoLabelText}>Username</Text>
               </View>
-              <Text style={styles.infoValue}>{userData.username}</Text>
+              <Text style={styles.infoValue}>{username}</Text>
             </View>
           </View>
 
@@ -167,7 +178,7 @@ export default function ProfileScreen() {
                 <MaterialIcons name="email" size={20} color="#6b7280" />
                 <Text style={styles.infoLabelText}>Email</Text>
               </View>
-              <Text style={styles.infoValue}>{userData.email}</Text>
+              <Text style={styles.infoValue}>{email}</Text>
             </View>
           </View>
         </View>

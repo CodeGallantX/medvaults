@@ -210,6 +210,23 @@ class FoodAllergyScanListView(APIView):
     
 
 
+# class CreateWalletView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+#     serializer_class = WalletSerializer
+
+#     def post(self, request):
+#         user = request.user
+#         if hasattr(user, 'wallet'):
+#             return Response({"detail": "Wallet already exists."}, status=status.HTTP_400_BAD_REQUEST)
+#         serializer = self.serializer_class(data=request.data)
+#         if serializer.is_valid():
+#             wallet = serializer.save(user=user)
+#             return Response(self.serializer_class(wallet).data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 class CreateWalletView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
@@ -224,6 +241,14 @@ class CreateWalletView(APIView):
             wallet = serializer.save(user=user)
             return Response(self.serializer_class(wallet).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        user = request.user
+        wallet = getattr(user, 'wallet', None)
+        if not wallet:
+            return Response({"detail": "Wallet does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(wallet)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # class CreateTransactionView(APIView):
@@ -414,7 +439,7 @@ class CreateTransactionView(APIView):
 
 
         if not pin:
-            return Response({"detail": " PIN needed."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "PIN needed."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             if pin != wallet.pin:
                 return Response({"detail": "Invalid PIN."}, status=status.HTTP_400_BAD_REQUEST)
@@ -584,9 +609,10 @@ class SendmessageToContact(APIView):
         from django.conf import settings
 
 
-        account_sid = settings.TWILIO_ACCOUNT_SID
-        auth_token = settings.TWILIO_AUTH_TOKEN
+        account_sid ="ACa5d17dfb68375f6c0e429345b6a7cf2a"
+        auth_token = "204e813caa159eca641a715ab217b63d"
         client = Client(account_sid, auth_token)
+        print(account_sid)
 
         user_name = request.user.first_name or request.user.username
         location_link = f"https://maps.google.com/?q={lat},{lng}"
@@ -595,13 +621,13 @@ class SendmessageToContact(APIView):
         try:
             call = client.calls.create(
                 to=formatted_number,
-                from_='+12678057649',
+                from_='+14067322959',
                 twiml=f"<Response><Say voice='alice'>{voice_message}</Say></Response>"
             )
 
             sms = client.messages.create(
                 to=formatted_number,
-                from_='+12678057649',
+                from_='+14067322959',
                 body="Emergency Alert:\n" + voice_message
             )
 
@@ -614,7 +640,19 @@ class SendmessageToContact(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+class UserBasicInfo(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
+    def get(self, request):
+        user = request.user
+        data = {
+            "username": user.username,
+            "email": user.email,
+            "firstname": user.first_name,
+            "lastname": user.last_name
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 # @csrf_exempt
 # def verify_payment(request):

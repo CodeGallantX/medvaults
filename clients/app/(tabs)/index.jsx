@@ -6,6 +6,9 @@ import { Dimensions, ScrollView, StyleSheet, Text, View, FlatList, TouchableOpac
 import { router } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
+import { useUserData } from '@/hooks/useUserData';
+import React from "react";
+
 
 
 const { height, width } = Dimensions.get("window");
@@ -87,6 +90,26 @@ export default function HomeScreen() {
     }
   };
 
+    const { 
+    username, 
+    email, 
+    fullName, 
+    lastName,
+    firstName,
+    error 
+  } = useUserData()
+
+
+useEffect(() => {
+  const checkToken = async () => {
+    const token = await AsyncStorage.getItem('access_token');
+    if (!token) {
+      router.push("/login");
+    }
+  };
+  checkToken();
+}, []);
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -116,7 +139,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>
-            Good morning, David
+            Good morning, {username}
           </Text>
           <Text style={styles.subtitle}>
             Stay healthy, stay safe 🌟
