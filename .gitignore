@@ -10,3 +10,4 @@ server/.env
 server/*.log
 server/venv/
 server/.env
+.env
