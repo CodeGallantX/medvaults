@@ -1,5 +1,17 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { styled } from 'styled-components/native';
+import { QuickActionCard } from '@/components/ui/QuickActionCard';
+import { Card } from '@/components/ui/Card';
+import { 
+  QrCode, 
+  Scan, 
+  MessageCircle, 
+  Activity,
+  Bell,
+  TrendingUp,
+  Clock
+} from 'lucide-react-native';
 
 import { useRef, useState, useEffect } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, View, FlatList, TouchableOpacity } from "react-native";
@@ -12,6 +24,101 @@ import React from "react";
 
 
 const { height, width } = Dimensions.get("window");
+
+// Styled Components
+const Container = styled(ScrollView)`
+  flex: 1;
+  background-color: #F9FAFB;
+`;
+
+const Header = styled(View)`
+  padding: 24px;
+  padding-top: 60px;
+  background-color: #ffffff;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+`;
+
+const GreetingText = styled(Text)`
+  font-family: 'Figtree-SemiBold';
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+`;
+
+const SubtitleText = styled(Text)`
+  font-family: 'Figtree';
+  font-size: 16px;
+  color: #6b7280;
+`;
+
+const SectionTitle = styled(Text)`
+  font-family: 'Figtree-SemiBold';
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 16px;
+`;
+
+const QuickActionsContainer = styled(View)`
+  flex-direction: row;
+  gap: 12px;
+  margin-bottom: 32px;
+`;
+
+const RecentActivityContainer = styled(View)`
+  padding: 0 24px;
+  margin-bottom: 32px;
+`;
+
+const ActivityItem = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  shadow-color: #000000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.05;
+  shadow-radius: 4px;
+  elevation: 2;
+`;
+
+const ActivityIconContainer = styled(View)<{ bgColor: string }>`
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: ${({ bgColor }) => bgColor};
+  justify-content: center;
+  align-items: center;
+  margin-right: 12px;
+`;
+
+const ActivityContent = styled(View)`
+  flex: 1;
+`;
+
+const ActivityTitle = styled(Text)`
+  font-family: 'Figtree-SemiBold';
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+`;
+
+const ActivitySubtitle = styled(Text)`
+  font-family: 'Figtree';
+  font-size: 14px;
+  color: #6b7280;
+`;
+
+const ActivityTime = styled(Text)`
+  font-family: 'Figtree';
+  font-size: 12px;
+  color: #9ca3af;
+`;
 
 const carouselData = [
   {
@@ -35,6 +142,30 @@ const carouselData = [
     gradient: ['#f59e0b', '#fbbf24'],
     backgroundColor: '#f59e0b'
   },
+];
+
+const quickActions = [
+  {
+    title: "QR Profile",
+    subtitle: "Share medical info",
+    icon: <QrCode size={24} color="#ffffff" />,
+    color: "#0076D6",
+    route: "/food_scan"
+  },
+  {
+    title: "AI Scanner",
+    subtitle: "Check allergens",
+    icon: <Scan size={24} color="#ffffff" />,
+    color: "#1CBF73",
+    route: "/food_scanner"
+  },
+  {
+    title: "AI Doctor",
+    subtitle: "Get health advice",
+    icon: <MessageCircle size={24} color="#ffffff" />,
+    color: "#F59E0B",
+    route: "/AIDoctor"
+  }
 ];
 
 const recentActivities = [
@@ -79,6 +210,7 @@ export default function HomeScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
   const router = useRouter()
+  const [greeting, setGreeting] = useState('Good morning');
 
   // Function to handle "My Health" card press
   const handleMyHealthPress = async () => {
@@ -99,6 +231,17 @@ export default function HomeScreen() {
     error 
   } = useUserData()
 
+
+useEffect(() => {
+  const hour = new Date().getHours();
+  if (hour < 12) {
+    setGreeting('Good morning');
+  } else if (hour < 18) {
+    setGreeting('Good afternoon');
+  } else {
+    setGreeting('Good evening');
+  }
+}, []);
 
 useEffect(() => {
   const checkToken = async () => {
@@ -127,135 +270,165 @@ useEffect(() => {
   }, []);
   
   return (
-    <ScrollView
-      contentContainerStyle={{
-        paddingVertical: 50,
-      }}
-      style={{
-        padding: 20,
-        backgroundColor: "#0f0f14",
-      }}
-    >
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>
-            Good morning, {username}
-          </Text>
-          <Text style={styles.subtitle}>
+    <Container showsVerticalScrollIndicator={false}>
+      <Header>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flex: 1 }}>
+            <GreetingText>
+              {greeting}, {firstName || username}
+            </GreetingText>
+            <SubtitleText>
             Stay healthy, stay safe 🌟
-          </Text>
+            </SubtitleText>
+          </View>
+          <TouchableOpacity 
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              backgroundColor: '#0076D6',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative'
+            }}
+          >
+            <Bell size={24} color="white" />
+            <View style={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              width: 12,
+              height: 12,
+              borderRadius: 6,
+              backgroundColor: '#E63946',
+              borderWidth: 2,
+              borderColor: '#ffffff'
+            }} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.avatar}>
-          <Ionicons name="notifications" size={24} color="white" />
-          <View style={styles.onlineIndicator} />
-        </TouchableOpacity>
-      </View>
+      </Header>
 
-      <View style={styles.mainActions}>
-        <TouchableOpacity onPress={handleMyHealthPress} style={[styles.actionCard, { backgroundColor: '#1a365d' }]}>
-          <View style={[styles.iconContainer, { backgroundColor: '#3182ce' }]}>
-            <MaterialIcons name="health-and-safety" size={32} color="white" />
-          </View>
-          <Text style={styles.actionTitle}>My Health</Text>
-          <Text style={styles.actionSubtitle}>View profile & records</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={()=> router.push("/food_scanner")} style={[styles.actionCard, { backgroundColor: '#2d1b69' }]}>
-          <View style={[styles.iconContainer, { backgroundColor: '#7c3aed' }]}>
-            <Ionicons name="scan" size={32} color="white" />
-          </View>
-          <Text style={styles.actionTitle}>Scan With AI</Text>
-          <Text style={styles.actionSubtitle}>Analyze food & medicine</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick actions</Text>
-        <ScrollView
-          horizontal={true}
-          showsHorizontalScrollIndicator={false}
-          style={styles.quickActionsContainer}
-          contentContainerStyle={styles.quickActionsContent}
-        >
-          {[
-            { title: "Notifications", color: "#ef4444", icon: "notifications" },
-            { title: "Insurance", color: "#06b6d4", icon: "security" },
-            { title: "Emergency", color: "#dc2626", icon: "local-hospital" },
-            { title: "Energy Alert", color: "#65a30d", icon: "flash-on" }
-          ].map((action, index) => (
-            <TouchableOpacity
+      <View style={{ padding: 24 }}>
+        <SectionTitle>Quick Actions</SectionTitle>
+        <QuickActionsContainer>
+          {quickActions.map((action, index) => (
+            <QuickActionCard
               key={index}
-              style={[styles.quickAction, { backgroundColor: action.color }]}
-            >
-              <MaterialIcons name={action.icon} size={16} color="white" style={{ marginRight: 5 }} />
-              <Text style={styles.quickActionText}>{action.title}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <View style={styles.section}>
-        <FlatList
-          ref={flatListRef}
-          data={carouselData}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={(event) => {
-            const index = Math.round(event.nativeEvent.contentOffset.x / (width - 40));
-            setCurrentIndex(index);
-          }}
-          renderItem={({ item, index }) => (
-            <EnhancedCarouselCard data={carouselData} index={index} />
-          )}
-          keyExtractor={(item, index) => index.toString()}
-          style={styles.carousel}
-          getItemLayout={(data, index) => ({
-            length: width - 40,
-            offset: (width - 40) * index,
-            index,
-          })}
-        />
-
-        <View style={styles.pagination}>
-          {carouselData.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.paginationDot,
-                {
-                  backgroundColor: currentIndex === index ? '#a855f7' : '#374151',
-                  width: currentIndex === index ? 24 : 8,
-                }
-              ]}
+              title={action.title}
+              subtitle={action.subtitle}
+              icon={action.icon}
+              color={action.color}
+              onPress={() => router.push(action.route)}
             />
           ))}
-        </View>
+        </QuickActionsContainer>
+
+        <Card style={{ marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+            <Activity size={24} color="#0076D6" />
+            <Text style={{ 
+              fontFamily: 'Figtree-SemiBold',
+              fontSize: 18,
+              fontWeight: '600',
+              color: '#111827',
+              marginLeft: 12
+            }}>
+              Health Overview
+            </Text>
+          </View>
+          
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ 
+                fontFamily: 'Figtree-SemiBold',
+                fontSize: 24,
+                fontWeight: '700',
+                color: '#1CBF73'
+              }}>
+                12
+              </Text>
+              <Text style={{ 
+                fontFamily: 'Figtree',
+                fontSize: 12,
+                color: '#6b7280'
+              }}>
+                Scans Today
+              </Text>
+            </View>
+            
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ 
+                fontFamily: 'Figtree-SemiBold',
+                fontSize: 24,
+                fontWeight: '700',
+                color: '#F59E0B'
+              }}>
+                3
+              </Text>
+              <Text style={{ 
+                fontFamily: 'Figtree',
+                fontSize: 12,
+                color: '#6b7280'
+              }}>
+                Alerts
+              </Text>
+            </View>
+            
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ 
+                fontFamily: 'Figtree-SemiBold',
+                fontSize: 24,
+                fontWeight: '700',
+                color: '#0076D6'
+              }}>
+                98%
+              </Text>
+              <Text style={{ 
+                fontFamily: 'Figtree',
+                fontSize: 12,
+                color: '#6b7280'
+              }}>
+                Safety Score
+              </Text>
+            </View>
+          </View>
+        </Card>
       </View>
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Activities</Text>
-          <TouchableOpacity>
-            <Text style={styles.viewAllText}>View all</Text>
-          </TouchableOpacity>
-        </View>
-        
-        {recentActivities.map((activity, index) => (
-          <TouchableOpacity key={index} style={styles.activityCard}>
-            <View style={[styles.activityIcon, { backgroundColor: activity.iconBg }]}>
+      <RecentActivityContainer>
+        <SectionTitle>Recent Activity</SectionTitle>
+        {recentActivities.slice(0, 4).map((activity, index) => (
+          <ActivityItem key={index}>
+            <ActivityIconContainer bgColor={activity.iconBg}>
               {activity.icon}
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={styles.activityTitle}>{activity.title}</Text>
-              <Text style={styles.activitySubtitle}>{activity.subtitle}</Text>
-            </View>
-            <Text style={styles.activityTime}>{activity.time}</Text>
-          </TouchableOpacity>
+            </ActivityIconContainer>
+            <ActivityContent>
+              <ActivityTitle>{activity.title}</ActivityTitle>
+              <ActivitySubtitle>{activity.subtitle}</ActivitySubtitle>
+            </ActivityContent>
+            <ActivityTime>{activity.time}</ActivityTime>
+          </ActivityItem>
         ))}
-      </View>
-
-    </ScrollView>
+        
+        <TouchableOpacity 
+          style={{
+            alignItems: 'center',
+            paddingVertical: 16,
+            marginTop: 8
+          }}
+          onPress={() => router.push('/scan_history')}
+        >
+          <Text style={{
+            fontFamily: 'Figtree-Medium',
+            fontSize: 16,
+            fontWeight: '600',
+            color: '#0076D6'
+          }}>
+            View All Activity
+          </Text>
+        </TouchableOpacity>
+      </RecentActivityContainer>
+    </Container>
   );
 }
 

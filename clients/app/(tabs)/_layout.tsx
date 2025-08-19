@@ -1,7 +1,8 @@
 import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { MessageCircle, Home, User, QrCode, History, Landmark } from 'lucide-react-native';
+import { MessageCircle, Home, User, QrCode, History, Wallet } from 'lucide-react-native';
+import { FloatingChatWidget } from '@/components/ui/FloatingChatWidget';
 
 import { CircularTabButton } from '@/components/CircularTabButton';
 import { HapticTab } from '@/components/HapticTab';
@@ -15,13 +16,19 @@ export default function TabLayout() {
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: "#b9b9e3",
+          tabBarActiveTintColor: "#0076D6",
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarStyle: {
-            backgroundColor: "#0d0c0f",
+            backgroundColor: "#ffffff",
             height: 60,
-            borderWidth: 0
+            borderTopWidth: 1,
+            borderTopColor: "#e5e7eb",
+            shadowColor: "#000000",
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 8,
           }
         }}>
         <Tabs.Screen
@@ -43,7 +50,7 @@ export default function TabLayout() {
           name="food_scan"
           options={{
             title: '',
-            tabBarIcon: ({ color }) => <QrCode size={30} color="black" />,
+            tabBarIcon: ({ color }) => <QrCode size={30} color="#ffffff" />,
             tabBarButton: CircularTabButton, // Use custom circular button
             tabBarShowLabel: false, // Hide the label for cleaner look
           }}
@@ -58,36 +65,16 @@ export default function TabLayout() {
         <Tabs.Screen
           name="save_money"
           options={{
-            title: 'Save money',
-            tabBarIcon: ({ color }) => <Landmark size={28} color={color} />,
+            title: 'Wallet',
+            tabBarIcon: ({ color }) => <Wallet size={28} color={color} />,
           }}
         />
       </Tabs>
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => router.push("/AIDoctor")}
-      >
-        <MessageCircle size={30} color="white" />
-      </TouchableOpacity>
+      <FloatingChatWidget />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  floatingButton: {
-    position: 'absolute',
-    width: 60,
-    height: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    right: 30,
-    bottom: 80, // Adjust this value to position the button above the tab bar
-    backgroundColor: '#a855f7',
-    borderRadius: 30,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-  },
+  // Styles can be added here if needed
 });

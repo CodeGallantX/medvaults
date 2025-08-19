@@ -9,13 +9,16 @@ import "react-native-reanimated";
 import { UserProvider } from '@/providers/UserProvider';
 import { ThemeProvider } from '@/hooks/useTheme';
 import { ThemeToggleButton } from '@/components/ThemeToggleButton';
+import ShakeDetector from "@/components/MyShakeComponent ";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
-import ShakeDetector from "@/components/MyShakeComponent ";
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     'Figtree': require("../assets/fonts/Figtree-VariableFont_wght.ttf"),
+    'Figtree-SemiBold': require("../assets/fonts/Figtree-VariableFont_wght.ttf"),
+    'Figtree-Medium': require("../assets/fonts/Figtree-VariableFont_wght.ttf"),
   });
 
   if (!loaded) {
@@ -27,6 +30,8 @@ export default function RootLayout() {
     <ThemeProvider>
       <UserProvider>
         <Stack>
+          <Stack.Screen name="splash" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ 
             headerShown: true,
             headerTitle: 'MedVault',
@@ -39,6 +44,7 @@ export default function RootLayout() {
           <Stack.Screen options={{ headerShown: false }} name="emergency-profile" />
           <Stack.Screen options={{ headerShown: false }} name="health_setup" />
         </Stack>
+        <ShakeDetector />
       </UserProvider>
       <StatusBar style="light" />
     </ThemeProvider>

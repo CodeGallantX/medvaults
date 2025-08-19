@@ -29,19 +29,19 @@ export function CircularTabButton({
           height: 70,
           borderRadius: 35,
           paddingTop: 10,
-          backgroundColor: "#b9b9e3",
+          backgroundColor: "#0076D6",
           justifyContent: "center",
           alignItems: "center",
           marginBottom: 35, // Elevates the circle above the tab bar
           ...Platform.select({
             ios: {
-              shadowColor: "#000",
+              shadowColor: "#0076D6",
               shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
             },
             android: {
-              elevation: 5,
+              elevation: 8,
             },
           }),
         }}
