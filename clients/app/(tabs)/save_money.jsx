@@ -12,8 +12,7 @@ import {
   Alert,
   Linking
 } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Wallet, RefreshCcw, EyeOff, Eye, ArrowDown, ArrowUp, Info, X } from 'lucide-react-native';
 import api from '../../assets/api';
 
 const WalletScreen = () => {
@@ -227,7 +226,7 @@ const WalletScreen = () => {
   if (!wallet) {
     return (
       <View style={styles.emptyWalletContainer}>
-        <MaterialIcons name="account-balance-wallet" size={48} color="#6b7280" />
+        <Wallet size={48} color="#6b7280" />
         <Text style={styles.emptyWalletText}>No wallet found</Text>
       </View>
     );
@@ -246,7 +245,7 @@ const WalletScreen = () => {
           <Text style={styles.headerSubtitle}>Account: {wallet.wallet_name}</Text>
         </View>
         <TouchableOpacity style={styles.refreshButton} onPress={fetchWallet}>
-          <Ionicons name="refresh" size={20} color="#a855f7" />
+          <RefreshCcw size={20} color="#a855f7" />
         </TouchableOpacity>
       </View>
 
@@ -255,11 +254,11 @@ const WalletScreen = () => {
         <View style={styles.balanceHeader}>
           <Text style={styles.balanceLabel}>Available Balance</Text>
           <TouchableOpacity onPress={toggleBalanceVisibility}>
-            <MaterialIcons 
-              name={balanceVisible ? 'visibility-off' : 'visibility'} 
-              size={20} 
-              color="#9ca3af" 
-            />
+            {balanceVisible ? (
+              <EyeOff size={20} color="#9ca3af" />
+            ) : (
+              <Eye size={20} color="#9ca3af" />
+            )}
           </TouchableOpacity>
         </View>
         
@@ -276,7 +275,7 @@ const WalletScreen = () => {
             style={[styles.actionButton, styles.depositButton]}
             onPress={() => setDepositModalVisible(true)}
           >
-            <MaterialIcons name="arrow-downward" size={20} color="#fff" />
+            <ArrowDown size={20} color="#fff" />
             <Text style={styles.actionButtonText}>Deposit</Text>
           </TouchableOpacity>
           
@@ -284,7 +283,7 @@ const WalletScreen = () => {
             style={[styles.actionButton, styles.withdrawButton]}
             onPress={() => setWithdrawModalVisible(true)}
           >
-            <MaterialIcons name="arrow-upward" size={20} color="#fff" />
+            <ArrowUp size={20} color="#fff" />
             <Text style={styles.actionButtonText}>Withdraw</Text>
           </TouchableOpacity>
         </View>
@@ -315,11 +314,11 @@ const WalletScreen = () => {
                     tx.transaction_type === 'credit' ? styles.creditCard : styles.debitCard
                   ]}>
                     <View style={styles.transactionHeader}>
-                      <MaterialIcons 
-                        name={tx.transaction_type === 'credit' ? 'arrow-downward' : 'arrow-upward'} 
-                        size={20} 
-                        color={tx.transaction_type === 'credit' ? '#10b981' : '#ef4444'} 
-                      />
+                      {tx.transaction_type === 'credit' ? (
+                        <ArrowDown size={20} color="#10b981" />
+                      ) : (
+                        <ArrowUp size={20} color="#ef4444" />
+                      )}
                       <View style={styles.transactionInfo}>
                         <Text style={styles.transactionType}>
                           {tx.transaction_type === 'credit' ? 'Deposit' : 'Withdrawal'}
@@ -350,7 +349,7 @@ const WalletScreen = () => {
           />
         ) : (
           <View style={styles.emptyState}>
-            <MaterialIcons name="info-outline" size={24} color="#6b7280" />
+            <Info size={24} color="#6b7280" />
             <Text style={styles.emptyText}>No transactions yet</Text>
           </View>
         )}
@@ -369,7 +368,7 @@ const WalletScreen = () => {
               style={styles.modalCloseButton}
               onPress={() => setDepositModalVisible(false)}
             >
-              <Ionicons name="close" size={24} color="#6b7280" />
+              <X size={24} color="#6b7280" />
             </TouchableOpacity>
             
             <Text style={styles.modalTitle}>Deposit Funds</Text>
@@ -428,7 +427,7 @@ const WalletScreen = () => {
               style={styles.modalCloseButton}
               onPress={() => setWithdrawModalVisible(false)}
             >
-              <Ionicons name="close" size={24} color="#6b7280" />
+              <X size={24} color="#6b7280" />
             </TouchableOpacity>
             
             <Text style={styles.modalTitle}>Withdraw Funds</Text>

@@ -9,8 +9,7 @@ import {
   Image,
   Alert
 } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { AlertTriangle, Clock, ArrowLeft, RefreshCcw, Info } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import api from '../../assets/api';
 
@@ -83,7 +82,7 @@ const ScanHistoryScreen = () => {
       <View style={styles.scanDetails}>
         {item.detected_allergen && (
           <View style={styles.detailRow}>
-            <MaterialIcons name="warning" size={18} color="#ef4444" />
+            <AlertTriangle size={18} color="#ef4444" />
             <Text style={styles.detailText}>
               Detected: {item.detected_allergen}
             </Text>
@@ -93,7 +92,7 @@ const ScanHistoryScreen = () => {
 
 
         <View style={styles.detailRow}>
-          <MaterialIcons name="schedule" size={18} color="#6b7280" />
+          <Clock size={18} color="#6b7280" />
           <Text style={styles.detailText}>
             {new Date(item.created_at).toLocaleString()}
           </Text>
@@ -119,7 +118,7 @@ const ScanHistoryScreen = () => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Your Scan History</Text>
         <TouchableOpacity 
@@ -130,7 +129,7 @@ const ScanHistoryScreen = () => {
           {refreshing ? (
             <ActivityIndicator size="small" color="#a855f7" />
           ) : (
-            <Ionicons name="refresh" size={20} color="#a855f7" />
+            <RefreshCcw size={20} color="#a855f7" />
           )}
         </TouchableOpacity>
       </View>
@@ -145,7 +144,7 @@ const ScanHistoryScreen = () => {
         onRefresh={onRefresh}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <MaterialIcons name="info-outline" size={48} color="#6b7280" />
+            <Info size={48} color="#6b7280" />
             <Text style={styles.emptyText}>No scan history found</Text>
             <Text style={styles.emptySubtext}>Scan some food to see your history here</Text>
           </View>

@@ -8,7 +8,7 @@ import {
   Dimensions,
   Image
 } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Stethoscope, Lock, CheckCircle } from 'lucide-react-native';
 
 const MedVaultLoader = ({ message = "Securing your health data..." }) => {
   // Animation values
@@ -138,7 +138,7 @@ const MedVaultLoader = ({ message = "Securing your health data..." }) => {
         {/* Animated MedVault */}
         <Animated.View style={[styles.vaultContainer, { transform: [{ scale: pulseScale }] }]}>
           <View style={styles.vaultBody}>
-            <MaterialIcons name="medical-services" size={60} color="#7c3aed" />
+            <Stethoscope size={60} color="#7c3aed" />
             <Animated.View style={[
               styles.vaultDoor, 
               { 
@@ -148,7 +148,7 @@ const MedVaultLoader = ({ message = "Securing your health data..." }) => {
                 ] 
               }
             ]}>
-              <MaterialIcons name="lock" size={30} color="#fff" />
+              <Lock size={30} color="#fff" />
             </Animated.View>
           </View>
         </Animated.View>
@@ -168,7 +168,7 @@ const MedVaultLoader = ({ message = "Securing your health data..." }) => {
         </View>
 
         <Text style={styles.hint}>
-          <MaterialIcons name="verified" size={16} color="#10b981" /> 
+          <CheckCircle size={16} color="#10b981" /> 
           {" "}Your health data is encrypted
         </Text>
       </View>

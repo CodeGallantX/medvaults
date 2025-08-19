@@ -9,8 +9,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Edit, User, Camera, Hospital, ArrowRight, AtSign, Mail, Bell, Shield, UserCircle, HelpCircle, ChevronRight, LogOut } from 'lucide-react-native';
 import { Link } from 'expo-router';
 import { useRouter } from 'expo-router';
 import { useUserData } from '@/hooks/useUserData';
@@ -96,7 +95,7 @@ export default function ProfileScreen() {
           </TouchableOpacity> */}
           <Text style={styles.headerTitle}>Profile</Text>
           <TouchableOpacity style={styles.editButton}>
-            <MaterialIcons name="edit" size={24} color="#a855f7" />
+            <Edit size={24} color="#a855f7" />
           </TouchableOpacity>
         </View>
 
@@ -104,10 +103,10 @@ export default function ProfileScreen() {
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <MaterialIcons name="person" size={48} color="#fff" />
+              <User size={48} color="#fff" />
             </View>
             <TouchableOpacity style={styles.cameraButton}>
-              <MaterialIcons name="camera-alt" size={16} color="#fff" />
+              <Camera size={16} color="#fff" />
             </TouchableOpacity>
           </View>
           
@@ -125,7 +124,7 @@ export default function ProfileScreen() {
           <Link href="/emergency-profile" asChild>
             <TouchableOpacity style={styles.emergencyButton}>
               <View style={styles.emergencyIconContainer}>
-                <MaterialIcons name="local-hospital" size={24} color="#fff" />
+                <Hospital size={24} color="#fff" />
               </View>
               <View style={styles.emergencyTextContainer}>
                 <Text style={styles.emergencyTitle}>Emergency Profile</Text>
@@ -133,7 +132,7 @@ export default function ProfileScreen() {
                   Quick access to medical information
                 </Text>
               </View>
-              <MaterialIcons name="arrow-forward" size={24} color="rgba(255,255,255,0.7)" />
+              <ArrowRight size={24} color="rgba(255,255,255,0.7)" />
             </TouchableOpacity>
           </Link>
         </View>
@@ -145,7 +144,7 @@ export default function ProfileScreen() {
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
               <View style={styles.infoLabel}>
-                <MaterialIcons name="person" size={20} color="#6b7280" />
+                <User size={20} color="#6b7280" />
                 <Text style={styles.infoLabelText}>First Name</Text>
               </View>
               <Text style={styles.infoValue}>Abdullateef </Text>
@@ -155,7 +154,7 @@ export default function ProfileScreen() {
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
               <View style={styles.infoLabel}>
-                <MaterialIcons name="person-outline" size={20} color="#6b7280" />
+                <User size={20} color="#6b7280" />
                 <Text style={styles.infoLabelText}>Last Name</Text>
               </View>
               <Text style={styles.infoValue}>Ojugbele</Text>
@@ -165,7 +164,7 @@ export default function ProfileScreen() {
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
               <View style={styles.infoLabel}>
-                <MaterialIcons name="alternate-email" size={20} color="#6b7280" />
+                <AtSign size={20} color="#6b7280" />
                 <Text style={styles.infoLabelText}>Username</Text>
               </View>
               <Text style={styles.infoValue}>{username}</Text>
@@ -175,7 +174,7 @@ export default function ProfileScreen() {
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
               <View style={styles.infoLabel}>
-                <MaterialIcons name="email" size={20} color="#6b7280" />
+                <Mail size={20} color="#6b7280" />
                 <Text style={styles.infoLabelText}>Email</Text>
               </View>
               <Text style={styles.infoValue}>{email}</Text>
@@ -190,13 +189,16 @@ export default function ProfileScreen() {
           {quickSettings.map((setting, index) => (
             <TouchableOpacity key={index} style={styles.settingCard}>
               <View style={[styles.settingIcon, { backgroundColor: setting.bgColor }]}>
-                <MaterialIcons name={setting.icon} size={20} color={setting.color} />
+                {setting.icon === "notifications" && <Bell size={20} color={setting.color} />}
+                {setting.icon === "security" && <Shield size={20} color={setting.color} />}
+                {setting.icon === "account-circle" && <UserCircle size={20} color={setting.color} />}
+                {setting.icon === "help-outline" && <HelpCircle size={20} color={setting.color} />}
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingTitle}>{setting.title}</Text>
                 <Text style={styles.settingSubtitle}>{setting.subtitle}</Text>
               </View>
-              <MaterialIcons name="chevron-right" size={24} color="#6b7280" />
+              <ChevronRight size={24} color="#6b7280" />
             </TouchableOpacity>
           ))}
         </View>
@@ -215,7 +217,7 @@ export default function ProfileScreen() {
               </View>
             ) : (
               <>
-                <MaterialIcons name="logout" size={20} color="#ef4444" />
+                <LogOut size={20} color="#ef4444" />
                   <Text style={styles.logoutButtonText} onPress={() => {
                     router.push("/login")
                     
@@ -429,7 +431,7 @@ const styles = StyleSheet.create({
   },
   logoutSection: {
     marginTop: 20,
-  },
+},
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',

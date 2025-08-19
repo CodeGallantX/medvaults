@@ -11,8 +11,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Mail, Lock, EyeOff, Eye, UserCircle, Apple } from 'lucide-react-native';
 import { Link } from 'expo-router';
 import api from "@/assets/api"
 import axios from "axios";
@@ -76,7 +75,7 @@ export default function LoginScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Email Address</Text>
             <View style={styles.inputContainer}>
-              <MaterialIcons name="email" size={20} color="#6b7280" style={styles.inputIcon} />
+              <Mail size={20} color="#6b7280" style={styles.inputIcon} />
               <TextInput
                 style={styles.textInput}
                 placeholder="Enter your username"
@@ -93,7 +92,7 @@ export default function LoginScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Password</Text>
             <View style={styles.inputContainer}>
-              <MaterialIcons name="lock" size={20} color="#6b7280" style={styles.inputIcon} />
+              <Lock size={20} color="#6b7280" style={styles.inputIcon} />
               <TextInput
                 style={styles.textInput}
                 placeholder="Enter your password"
@@ -108,11 +107,11 @@ export default function LoginScreen() {
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}
               >
-                <Ionicons 
-                  name={showPassword ? "eye-off" : "eye"} 
-                  size={20} 
-                  color="#6b7280" 
-                />
+                {showPassword ? (
+                  <EyeOff size={20} color="#6b7280" />
+                ) : (
+                  <Eye size={20} color="#6b7280" />
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -147,7 +146,7 @@ export default function LoginScreen() {
               style={styles.socialButton}
               onPress={() => handleSocialLogin('Google')}
             >
-              <MaterialIcons name="account-circle" size={24} color="#db4437" />
+              <UserCircle size={24} color="#db4437" />
               <Text style={styles.socialButtonText}>Google</Text>
             </TouchableOpacity>
 
@@ -155,7 +154,7 @@ export default function LoginScreen() {
               style={styles.socialButton}
               onPress={() => handleSocialLogin('Apple')}
             >
-              <MaterialIcons name="apple" size={24} color="#000" />
+              <Apple size={24} color="#000" />
               <Text style={styles.socialButtonText}>Apple</Text>
             </TouchableOpacity>
           </View>

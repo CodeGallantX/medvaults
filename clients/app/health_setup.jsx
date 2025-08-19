@@ -9,14 +9,26 @@ import {
   StatusBar,
   TextInput,
 } from "react-native";
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Droplet, FlaskConical, Scale, AlertTriangle, HeartPulse, Pill, Syringe, Utensils, SmokingOff, Beer, Run, ArrowLeft, Stethoscope, Phone, Dumbbell } from 'lucide-react-native';
 import { Link, useRouter } from 'expo-router';
 import api from "@/assets/api";
 
 const InputField = React.memo(({ label, value, field, icon, multiline = false, keyboardType = 'default', updateHealthData }) => (
   <View style={styles.inputContainer}>
     <View style={styles.inputLabelContainer}>
-      <MaterialIcons name={icon} size={20} color="#6b7280" style={styles.inputIcon} />
+      {icon === "bloodtype" && <Droplet size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "science" && <FlaskConical size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "monitor-weight" && <Scale size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "warning" && <AlertTriangle size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "healing" && <HeartPulse size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "medication" && <Pill size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "vaccines" && <Syringe size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "restaurant" && <Utensils size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "smoke-free" && <SmokingOff size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "local-bar" && <Beer size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "directions-run" && <Run size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "person" && <User size={20} color="#6b7280" style={styles.inputIcon} />}
+      {icon === "phone" && <Phone size={20} color="#6b7280" style={styles.inputIcon} />}
       <Text style={styles.inputLabel}>{label}</Text>
     </View>
     <TextInput
@@ -101,7 +113,7 @@ const HealthSetupScreen = () => {
             <TouchableOpacity style={styles.backButton} onPress={() => {
               router.push("/(tabs)/")
             }}>
-              <MaterialIcons name="arrow-back" size={24} color="#fff" />
+              <ArrowLeft size={24} color="#fff" />
             </TouchableOpacity>
           {/* </Link> */}
           <Text style={styles.headerTitle}>Setup Health Profile</Text>
@@ -112,7 +124,7 @@ const HealthSetupScreen = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionIcon, { backgroundColor: '#fef2f2' }]}>
-              <MaterialIcons name="bloodtype" size={20} color="#ef4444" />
+              <Droplet size={20} color="#ef4444" />
             </View>
             <Text style={styles.sectionTitle}>Blood & Genetics</Text>
           </View>
@@ -147,7 +159,7 @@ const HealthSetupScreen = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionIcon, { backgroundColor: '#fffbeb' }]}>
-              <MaterialIcons name="medical-services" size={20} color="#f59e0b" />
+              <Stethoscope size={20} color="#f59e0b" />
             </View>
             <Text style={styles.sectionTitle}>Medical Information</Text>
           </View>
@@ -193,7 +205,7 @@ const HealthSetupScreen = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionIcon, { backgroundColor: '#f0fdf4' }]}>
-              <MaterialIcons name="contact-phone" size={20} color="#10b981" />
+              <Phone size={20} color="#10b981" />
             </View>
             <Text style={styles.sectionTitle}>Emergency Contact</Text>
           </View>
@@ -220,7 +232,7 @@ const HealthSetupScreen = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionIcon, { backgroundColor: '#f5f3ff' }]}>
-              <MaterialIcons name="fitness-center" size={20} color="#8b5cf6" />
+              <Dumbbell size={20} color="#8b5cf6" />
             </View>
             <Text style={styles.sectionTitle}>Lifestyle</Text>
           </View>

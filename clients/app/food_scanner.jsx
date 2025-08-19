@@ -12,8 +12,7 @@ import {
   Dimensions
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { ArrowLeft, Image as ImageIcon, Type, X, Utensils, Lightbulb, Scan, AlertTriangle, CheckCircle, AlertCircle, HelpCircle } from 'lucide-react-native';
 import { router } from 'expo-router';
 import api from '@/assets/api';
 
@@ -93,10 +92,10 @@ const ScanFoodScreen = () => {
 
   const getRiskIcon = (riskLevel) => {
     switch (riskLevel?.toLowerCase()) {
-      case 'low': return 'check-circle';
-      case 'medium': return 'warning';
-      case 'high': return 'dangerous';
-      default: return 'help';
+      case 'low': return <CheckCircle size={20} />;
+      case 'medium': return <AlertTriangle size={20} />;
+      case 'high': return <AlertCircle size={20} />;
+      default: return <HelpCircle size={20} />;
     }
   };
 
@@ -109,7 +108,7 @@ const ScanFoodScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Food Scanner</Text>
         <View style={styles.headerRightPlaceholder} />
@@ -124,8 +123,7 @@ const ScanFoodScreen = () => {
           ]}
           onPress={() => setActiveTab('image')}
         >
-          <MaterialIcons 
-            name="photo-library" 
+          <ImageIcon 
             size={20} 
             color={activeTab === 'image' ? '#a855f7' : '#6b7280'} 
           />
@@ -144,8 +142,7 @@ const ScanFoodScreen = () => {
           ]}
           onPress={() => setActiveTab('text')}
         >
-          <MaterialIcons 
-            name="text-fields" 
+          <Type 
             size={20} 
             color={activeTab === 'text' ? '#a855f7' : '#6b7280'} 
           />
@@ -162,8 +159,7 @@ const ScanFoodScreen = () => {
       {activeTab === 'image' && (
         <View style={styles.tabContent}>
           <TouchableOpacity style={styles.uploadButton} onPress={pickImage}>
-            <MaterialIcons 
-              name={image ? "image" : "photo-library"} 
+            <ImageIcon 
               size={24} 
               color="#a855f7" 
             />
@@ -179,7 +175,7 @@ const ScanFoodScreen = () => {
                 style={styles.removeImageButton} 
                 onPress={() => setImage(null)}
               >
-                <MaterialIcons name="close" size={20} color="white" />
+                <X size={20} color="white" />
               </TouchableOpacity>
             </View>
           )}
@@ -191,7 +187,7 @@ const ScanFoodScreen = () => {
         <View style={styles.tabContent}>
           <View style={styles.inputContainer}>
             <View style={styles.inputLabelContainer}>
-              <MaterialIcons name="restaurant" size={20} color="#6b7280" />
+              <Utensils size={20} color="#6b7280" />
               <Text style={styles.inputLabel}>FOOD NAME</Text>
             </View>
             <TextInput
@@ -204,7 +200,7 @@ const ScanFoodScreen = () => {
             />
           </View>
           <Text style={styles.inputHint}>
-            <MaterialIcons name="lightbulb" size={14} color="#f59e0b" /> 
+            <Lightbulb size={14} color="#f59e0b" /> 
             Be specific for better results
           </Text>
         </View>
@@ -228,7 +224,7 @@ const ScanFoodScreen = () => {
         {loading ? (
           <ActivityIndicator size="small" color="white" />
         ) : (
-          <MaterialIcons name="scanner" size={24} color="white" />
+          <Scan size={24} color="white" />
         )}
         <Text style={styles.scanButtonText}>
           {loading ? 'Analyzing...' : activeTab === 'image' ? 'Scan Image' : 'Analyze Text'}
@@ -239,8 +235,7 @@ const ScanFoodScreen = () => {
       {result && (
         <View style={styles.resultsSection}>
           <View style={styles.resultHeader}>
-            <MaterialIcons 
-              name={activeTab === 'image' ? "image-search" : "text-fields"} 
+            <ImageIcon 
               size={24} 
               color="#10b981" 
             />
@@ -251,7 +246,7 @@ const ScanFoodScreen = () => {
 
           <View style={styles.resultCard}>
             <View style={styles.resultCardHeader}>
-              <MaterialIcons name="restaurant" size={20} color="#3b82f6" />
+              <Utensils size={20} color="#3b82f6" />
               <Text style={styles.resultCardTitle}>DETECTED FOOD</Text>
             </View>
             <Text style={styles.foodName}>{result.food_name || 'Unknown Food'}</Text>
@@ -259,11 +254,7 @@ const ScanFoodScreen = () => {
 
           <View style={[styles.resultCard, { borderLeftColor: getRiskColor(result.risk_level) }]}>
             <View style={styles.resultCardHeader}>
-              <MaterialIcons 
-                name={getRiskIcon(result.risk_level)} 
-                size={20} 
-                color={getRiskColor(result.risk_level)} 
-              />
+              {getRiskIcon(result.risk_level)}
               <Text style={styles.resultCardTitle}>RISK LEVEL</Text>
             </View>
             <View style={styles.riskContainer}>
@@ -281,13 +272,13 @@ const ScanFoodScreen = () => {
 
           <View style={styles.resultCard}>
             <View style={styles.resultCardHeader}>
-              <MaterialIcons name="warning" size={20} color="#f59e0b" />
+              <AlertTriangle size={20} color="#f59e0b" />
               <Text style={styles.resultCardTitle}>DETECTED ALLERGENS</Text>
             </View>
             <View style={styles.allergensContainer}>
               {result.detected_allergen?.split(', ').map((allergen, index) => (
                 <View key={index} style={styles.allergenTag}>
-                  <MaterialIcons name="report-problem" size={16} color="#ef4444" />
+                  <AlertTriangle size={16} color="#ef4444" />
                   <Text style={styles.allergenText}>{allergen.trim()}</Text>
                 </View>
               ))}

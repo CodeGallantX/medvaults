@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import FontAwesome from "@expo/vector-icons/FontAwesome";
+
 import { useRef, useState, useEffect } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, View, FlatList, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
@@ -254,6 +254,7 @@ useEffect(() => {
           </TouchableOpacity>
         ))}
       </View>
+
     </ScrollView>
   );
 }
@@ -497,4 +498,5 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     fontSize: 12,
   },
+  
 });

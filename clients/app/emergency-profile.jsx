@@ -10,8 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { ArrowLeft, Share2, Ambulance, Phone, QrCode, Droplet, FlaskConical, Scale, Stethoscope, AlertTriangle, HeartPulse, Pill, User, History, Syringe, Dumbbell, Utensils, SmokingOff, Beer, Run, Info, Clock } from 'lucide-react-native';
 import { Link, useRouter } from 'expo-router';
 import api from '@/assets/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -154,19 +153,19 @@ function EmergencyProfileScreen() {
           <TouchableOpacity style={styles.backButton} onPress={() => {
             router.back()
             }}>
-              <Ionicons name="arrow-back" size={24} color="#fff" />
+              <ArrowLeft size={24} color="#fff" />
             </TouchableOpacity>
           {/* </Link> */}
           <Text style={styles.headerTitle}>Emergency Profile</Text>
           <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-            <MaterialIcons name="share" size={24} color="#a855f7" />
+            <Share2 size={24} color="#a855f7" />
           </TouchableOpacity>
         </View>
 
         {/* Banner */}
         <View style={styles.alertBanner}>
           <View style={styles.alertIcon}>
-            <MaterialIcons name="emergency" size={24} color="#fff" />
+            <Ambulance size={24} color="#fff" />
           </View>
           <View style={styles.alertContent}>
             <Text style={styles.alertTitle}>Emergency Medical Information</Text>
@@ -177,7 +176,7 @@ function EmergencyProfileScreen() {
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#10b981' }]} onPress={sendEmergencyAlert}>
-            <MaterialIcons name="phone" size={20} color="#fff" />
+            <Phone size={20} color="#fff" />
             <Text style={styles.actionButtonText}>Call Contact</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -192,7 +191,7 @@ function EmergencyProfileScreen() {
               </View>
             ) : (
               <>
-                <MaterialIcons name="qr-code" size={20} color="#fff" />
+                <QrCode size={20} color="#fff" />
                 <Text style={styles.actionButtonText}>Generate QR</Text>
               </>
             )}
@@ -204,7 +203,11 @@ function EmergencyProfileScreen() {
           <View key={sectionIndex} style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionIcon, { backgroundColor: section.bgColor }]}>
-                <MaterialIcons name={section.icon} size={20} color={section.color} />
+                {section.icon === "bloodtype" && <Droplet size={20} color={section.color} />}
+                {section.icon === "medical-services" && <Stethoscope size={20} color={section.color} />}
+                {section.icon === "contact-phone" && <Phone size={20} color={section.color} />}
+                {section.icon === "history" && <History size={20} color={section.color} />}
+                {section.icon === "fitness-center" && <Dumbbell size={20} color={section.color} />}
               </View>
               <Text style={styles.sectionTitle}>{section.title}</Text>
             </View>
@@ -212,12 +215,24 @@ function EmergencyProfileScreen() {
               <View key={itemIndex} style={styles.infoCard}>
                 <View style={styles.infoHeader}>
                   <View style={styles.infoLabel}>
-                    <MaterialIcons name={item.icon} size={18} color="#6b7280" />
+                    {item.icon === "opacity" && <Droplet size={18} color="#6b7280" />}
+                    {item.icon === "science" && <FlaskConical size={18} color="#6b7280" />}
+                    {item.icon === "monitor-weight" && <Scale size={18} color="#6b7280" />}
+                    {item.icon === "warning" && <AlertTriangle size={18} color="#6b7280" />}
+                    {item.icon === "healing" && <HeartPulse size={18} color="#6b7280" />}
+                    {item.icon === "medication" && <Pill size={18} color="#6b7280" />}
+                    {item.icon === "person" && <User size={18} color="#6b7280" />}
+                    {item.icon === "phone" && <Phone size={18} color="#6b7280" />}
+                    {item.icon === "vaccines" && <Syringe size={18} color="#6b7280" />}
+                    {item.icon === "restaurant" && <Utensils size={18} color="#6b7280" />}
+                    {item.icon === "smoke-free" && <SmokingOff size={18} color="#6b7280" />}
+                    {item.icon === "local-bar" && <Beer size={18} color="#6b7280" />}
+                    {item.icon === "directions-run" && <Run size={18} color="#6b7280" />}
                     <Text style={styles.infoLabelText}>{item.label}</Text>
                   </View>
                   {item.actionable && (
                     <TouchableOpacity style={styles.actionIcon} onPress={handleCallEmergencyContact}>
-                      <MaterialIcons name="phone" size={18} color="#10b981" />
+                      <Phone size={18} color="#10b981" />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -232,7 +247,7 @@ function EmergencyProfileScreen() {
         {/* Notice */}
         <View style={styles.noticeCard}>
           <View style={styles.noticeIcon}>
-            <MaterialIcons name="info" size={20} color="#3b82f6" />
+            <Info size={20} color="#3b82f6" />
           </View>
           <View style={styles.noticeContent}>
             <Text style={styles.noticeTitle}>Important Notice</Text>
@@ -244,7 +259,7 @@ function EmergencyProfileScreen() {
 
         {/* Last Updated */}
         <View style={styles.lastUpdated}>
-          <MaterialIcons name="schedule" size={16} color="#6b7280" />
+          <Clock size={16} color="#6b7280" />
           <Text style={styles.lastUpdatedText}>Last updated: {new Date().toLocaleDateString()}</Text>
         </View>
       </ScrollView>
@@ -376,7 +391,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-  },
+},
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',

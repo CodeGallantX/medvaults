@@ -1,7 +1,7 @@
 // components/CustomTabBar.tsx
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated, Text } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+
 import { BlurView } from 'expo-blur';
 
 export const CustomTabBar = ({ state, descriptors, navigation }: any) => {

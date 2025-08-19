@@ -12,8 +12,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { User, Mail, Badge, Lock, EyeOff, Eye, CheckCircle, Circle, UserCircle, Apple, Shield } from "lucide-react-native";
 import { Link } from "expo-router";
 import api from "@/assets/api"
 
@@ -150,12 +149,11 @@ export default function RegisterScreen() {
             errors[field] && styles.inputContainerError,
           ]}
         >
-          <MaterialIcons
-            name={icon}
-            size={20}
-            color="#6b7280"
-            style={styles.inputIcon}
-          />
+          {icon === "person" && <User size={20} color="#6b7280" style={styles.inputIcon} />}
+          {icon === "email" && <Mail size={20} color="#6b7280" style={styles.inputIcon} />}
+          {icon === "badge" && <Badge size={20} color="#6b7280" style={styles.inputIcon} />}
+          {icon === "lock" && <Lock size={20} color="#6b7280" style={styles.inputIcon} />}
+          {icon === "lock-outline" && <Lock size={20} color="#6b7280" style={styles.inputIcon} />}
           <TextInput
             style={styles.textInput}
             placeholder={placeholder}
@@ -169,11 +167,11 @@ export default function RegisterScreen() {
           />
           {showToggle && (
             <TouchableOpacity onPress={onToggle} style={styles.eyeIcon}>
-              <Ionicons
-                name={toggleState ? "eye-off" : "eye"}
-                size={20}
-                color="#6b7280"
-              />
+              {toggleState ? (
+                <EyeOff size={20} color="#6b7280" />
+              ) : (
+                <Eye size={20} color="#6b7280" />
+              )}
             </TouchableOpacity>
           )}
         </View>
@@ -256,15 +254,13 @@ export default function RegisterScreen() {
             <Text style={styles.requirementsTitle}>Password Requirements:</Text>
             <View style={styles.requirementsList}>
               <View style={styles.requirement}>
-                <MaterialIcons
-                  name={
-                    formData.password.length >= 8
-                      ? "check-circle"
-                      : "radio-button-unchecked"
-                  }
-                  size={16}
-                  color={formData.password.length >= 8 ? "#10b981" : "#6b7280"}
-                />
+                {
+                  formData.password.length >= 8 ? (
+                    <CheckCircle size={16} color="#10b981" />
+                  ) : (
+                    <Circle size={16} color="#6b7280" />
+                  )
+                }
                 <Text
                   style={[
                     styles.requirementText,
@@ -275,21 +271,14 @@ export default function RegisterScreen() {
                 </Text>
               </View>
               <View style={styles.requirement}>
-                <MaterialIcons
-                  name={
-                    formData.password === formData.password2 &&
-                    formData.password2
-                      ? "check-circle"
-                      : "radio-button-unchecked"
-                  }
-                  size={16}
-                  color={
-                    formData.password === formData.password2 &&
-                    formData.password2
-                      ? "#10b981"
-                      : "#6b7280"
-                  }
-                />
+                {
+                  formData.password === formData.password2 &&
+                  formData.password2 ? (
+                    <CheckCircle size={16} color="#10b981" />
+                  ) : (
+                    <Circle size={16} color="#6b7280" />
+                  )
+                }
                 <Text
                   style={[
                     styles.requirementText,
@@ -335,7 +324,7 @@ export default function RegisterScreen() {
               style={styles.socialButton}
               onPress={() => handleSocialRegister("Google")}
             >
-              <MaterialIcons name="account-circle" size={24} color="#db4437" />
+              <UserCircle size={24} color="#db4437" />
               <Text style={styles.socialButtonText}>Google</Text>
             </TouchableOpacity>
 
@@ -343,7 +332,7 @@ export default function RegisterScreen() {
               style={styles.socialButton}
               onPress={() => handleSocialRegister("Apple")}
             >
-              <MaterialIcons name="apple" size={24} color="#000" />
+              <Apple size={24} color="#000" />
               <Text style={styles.socialButtonText}>Apple</Text>
             </TouchableOpacity>
           </View>
@@ -360,7 +349,7 @@ export default function RegisterScreen() {
 
         <View style={styles.privacyNotice}>
           <View style={styles.privacyCard}>
-            <MaterialIcons name="security" size={20} color="#10b981" />
+            <Shield size={20} color="#10b981" />
             <Text style={styles.privacyText}>
               🔒 Your health data is encrypted and secure. We follow HIPAA
               compliance standards.
@@ -571,7 +560,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     marginBottom: 24,
-  },
+},
   socialButton: {
     flex: 1,
     flexDirection: "row",

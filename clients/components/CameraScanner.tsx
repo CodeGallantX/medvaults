@@ -15,9 +15,9 @@ import {
   View,
 } from "react-native";
 import {
-  AntDesign,
-  FontAwesome6,
-} from "@expo/vector-icons";
+  Image,
+  RefreshCcw,
+} from "lucide-react-native";
 import { useImagePicker } from "@/hooks/useImagePicker";
 
 interface CameraScannerProps {
@@ -97,7 +97,7 @@ export default function CameraScanner({ setUploadUri }: CameraScannerProps) {
             onPress={handleChooseImage}
             style={styles.galleryButton}
           >
-            <AntDesign name="picture" size={32} color="white" />
+            <Image size={32} color="white" />
           </TouchableOpacity>
           
           <Pressable onPress={takePicture}>
@@ -123,7 +123,7 @@ export default function CameraScanner({ setUploadUri }: CameraScannerProps) {
           </Pressable>
           
           <Pressable onPress={toggleCameraFacing} style={styles.flipButton}>
-            <FontAwesome6 name="camera-rotate" size={32} color="white" />
+            <RefreshCcw size={32} color="white" />
           </Pressable>
         </View>
       </CameraView>
