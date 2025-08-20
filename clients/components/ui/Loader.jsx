@@ -6,37 +6,53 @@ import {
   Animated,
   Easing,
   Dimensions,
-  Image
 } from 'react-native';
-import { Stethoscope, Lock, CheckCircle } from 'lucide-react-native';
+import { Stethoscope, Lock, CheckCircle, Sparkles, Activity } from 'lucide-react-native';
 
-const MedVaultLoader = ({ message = "Securing your health data..." }) => {
+const { width } = Dimensions.get('window');
+
+const MedVaultLoader = ({ 
+  message = "Securing your health data...", 
+  type = "default", // "default", "scanning", "analyzing"
+  progress = null 
+}) => {
   // Animation values
-  const [progress] = useState(new Animated.Value(0));
+  const [progressAnim] = useState(new Animated.Value(0));
   const [pulseAnim] = useState(new Animated.Value(1));
   const [vaultOpenAnim] = useState(new Animated.Value(0));
-  const [dnaAnim] = useState(new Animated.Value(0));
+  const [sparkleAnim] = useState(new Animated.Value(0));
+  const [rotateAnim] = useState(new Animated.Value(0));
 
   // Start all animations
   useEffect(() => {
-    // Progress bar animation (left to right loop)
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(progress, {
-          toValue: 1,
-          duration: 2000,
-          easing: Easing.linear,
-          useNativeDriver: false
-        }),
-        Animated.timing(progress, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: false
-        })
-      ])
-    ).start();
+    // Progress bar animation
+    if (progress !== null) {
+      Animated.timing(progressAnim, {
+        toValue: progress,
+        duration: 1000,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false
+      }).start();
+    } else {
+      // Continuous progress animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(progressAnim, {
+            toValue: 1,
+            duration: 2000,
+            easing: Easing.linear,
+            useNativeDriver: false
+          }),
+          Animated.timing(progressAnim, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: false
+          })
+        ])
+      ).start();
+    }
 
-    // Pulsing effect for vault
+    // Pulsing effect
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -54,37 +70,53 @@ const MedVaultLoader = ({ message = "Securing your health data..." }) => {
       ])
     ).start();
 
-    // Vault door opening/closing
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(vaultOpenAnim, {
+    // Vault door animation
+    if (type === "default") {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(vaultOpenAnim, {
+            toValue: 1,
+            duration: 1500,
+            easing: Easing.ease,
+            useNativeDriver: true
+          }),
+          Animated.timing(vaultOpenAnim, {
+            toValue: 0,
+            duration: 1500,
+            easing: Easing.ease,
+            useNativeDriver: true
+          })
+        ])
+      ).start();
+    }
+
+    // Sparkle animation for scanning/analyzing
+    if (type === "scanning" || type === "analyzing") {
+      Animated.loop(
+        Animated.timing(sparkleAnim, {
           toValue: 1,
           duration: 1500,
-          easing: Easing.ease,
-          useNativeDriver: true
-        }),
-        Animated.timing(vaultOpenAnim, {
-          toValue: 0,
-          duration: 1500,
-          easing: Easing.ease,
+          easing: Easing.linear,
           useNativeDriver: true
         })
-      ])
-    ).start();
+      ).start();
+    }
 
-    // DNA strand wave animation
-    Animated.loop(
-      Animated.timing(dnaAnim, {
-        toValue: 1,
-        duration: 2000,
-        easing: Easing.linear,
-        useNativeDriver: true
-      })
-    ).start();
-  }, []);
+    // Rotation animation for analyzing
+    if (type === "analyzing") {
+      Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.linear,
+          useNativeDriver: true
+        })
+      ).start();
+    }
+  }, [type, progress]);
 
   // Interpolated values
-  const progressWidth = progress.interpolate({
+  const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0%', '100%']
   });
@@ -94,87 +126,190 @@ const MedVaultLoader = ({ message = "Securing your health data..." }) => {
     outputRange: ['0deg', '-15deg']
   });
 
-  const pulseScale = pulseAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.95, 1.05]
-  });
-
-  const dnaWave = dnaAnim.interpolate({
+  const sparkleOpacity = sparkleAnim.interpolate({
     inputRange: [0, 0.5, 1],
-    outputRange: [0, 1, 0]
+    outputRange: [0.3, 1, 0.3]
   });
 
-  // Create animated DNA nodes
-  const renderDnaNodes = () => {
-    const nodes = [];
-    for (let i = 0; i < 10; i++) {
-      const nodePosition = dnaWave.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, i % 2 === 0 ? -10 : 10]
-      });
+  const sparkleScale = sparkleAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.8, 1.2, 0.8]
+  });
 
-      nodes.push(
-        <Animated.View
-          key={i}
-          style={[
-            styles.dnaNode,
-            {
-              transform: [
-                { translateY: nodePosition }
-              ],
-              backgroundColor: i % 2 === 0 ? '#7c3aed' : '#a78bfa'
-            }
-          ]}
-        />
-      );
+  const rotation = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg']
+  });
+
+  const getMainIcon = () => {
+    switch (type) {
+      case "scanning":
+        return (
+          <Animated.View style={{
+            transform: [
+              { scale: sparkleScale },
+              { rotate: rotation }
+            ],
+            opacity: sparkleOpacity
+          }}>
+            <Sparkles size={60} color="#F59E0B" />
+          </Animated.View>
+        );
+      case "analyzing":
+        return (
+          <Animated.View style={{
+            transform: [{ rotate: rotation }]
+          }}>
+            <Activity size={60} color="#0076D6" />
+          </Animated.View>
+        );
+      default:
+        return <Stethoscope size={60} color="#7c3aed" />;
     }
-    return nodes;
   };
+
+  const getTitle = () => {
+    switch (type) {
+      case "scanning":
+        return "AI Scanner";
+      case "analyzing":
+        return "Analyzing Food";
+      default:
+        return "MedVault";
+    }
+  };
+
+  const getColors = () => {
+    switch (type) {
+      case "scanning":
+        return {
+          primary: "#F59E0B",
+          secondary: "#FEF3C7",
+          accent: "#D97706"
+        };
+      case "analyzing":
+        return {
+          primary: "#0076D6",
+          secondary: "#DBEAFE",
+          accent: "#1D4ED8"
+        };
+      default:
+        return {
+          primary: "#7c3aed",
+          secondary: "#f3e8ff",
+          accent: "#6d28d9"
+        };
+    }
+  };
+
+  const colors = getColors();
 
   return (
     <View style={styles.container}>
       {/* Main Content */}
       <View style={styles.content}>
-        {/* Animated MedVault */}
-        <Animated.View style={[styles.vaultContainer, { transform: [{ scale: pulseScale }] }]}>
-          <View style={styles.vaultBody}>
-            <Stethoscope size={60} color="#7c3aed" />
-            <Animated.View style={[
-              styles.vaultDoor, 
-              { 
-                transform: [
-                  { rotateY: vaultRotation },
-                  { perspective: 1000 } // Needed for 3D effect
-                ] 
-              }
-            ]}>
-              <Lock size={30} color="#fff" />
-            </Animated.View>
+        {/* Animated Icon Container */}
+        <Animated.View style={[
+          styles.iconContainer, 
+          { 
+            transform: [{ scale: pulseAnim }],
+            backgroundColor: colors.secondary,
+            borderColor: colors.primary + '30'
+          }
+        ]}>
+          <View style={styles.iconBody}>
+            {getMainIcon()}
+            
+            {type === "default" && (
+              <Animated.View style={[
+                styles.vaultDoor, 
+                { 
+                  transform: [
+                    { rotateY: vaultRotation },
+                    { perspective: 1000 }
+                  ] 
+                }
+              ]}>
+                <Lock size={30} color="#fff" />
+              </Animated.View>
+            )}
           </View>
         </Animated.View>
 
-        <Text style={styles.title}>MedVault</Text>
+        <Text style={[styles.title, { color: colors.primary }]}>
+          {getTitle()}
+        </Text>
         <Text style={styles.subtitle}>{message}</Text>
 
-        {/* DNA Animation */}
-        <View style={styles.dnaContainer}>
-          {renderDnaNodes()}
-          <View style={styles.dnaStrand} />
+        {/* Enhanced Progress Bar */}
+        <View style={styles.progressSection}>
+          <View style={styles.progressBarContainer}>
+            <Animated.View style={[
+              styles.progressBar, 
+              { 
+                width: progressWidth,
+                backgroundColor: colors.primary
+              }
+            ]} />
+            <Animated.View style={[
+              styles.progressGlow,
+              {
+                width: progressWidth,
+                backgroundColor: colors.primary + '40'
+              }
+            ]} />
+          </View>
+          
+          {progress !== null && (
+            <Text style={[styles.progressText, { color: colors.primary }]}>
+              {Math.round(progress * 100)}%
+            </Text>
+          )}
         </View>
 
-        {/* Progress Bar */}
-        <View style={styles.progressBarContainer}>
-          <Animated.View style={[styles.progressBar, { width: progressWidth }]} />
-        </View>
+        {/* Floating particles for scanning/analyzing */}
+        {(type === "scanning" || type === "analyzing") && (
+          <View style={styles.particlesContainer}>
+            {[...Array(6)].map((_, index) => (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.particle,
+                  {
+                    backgroundColor: colors.primary,
+                    opacity: sparkleOpacity,
+                    transform: [
+                      { 
+                        translateX: sparkleAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, (index % 2 === 0 ? 20 : -20)]
+                        })
+                      },
+                      { 
+                        translateY: sparkleAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, (index % 3 === 0 ? -15 : 15)]
+                        })
+                      },
+                      { scale: sparkleScale }
+                    ]
+                  }
+                ]}
+              />
+            ))}
+          </View>
+        )}
 
-        <Text style={styles.hint}>
-          <CheckCircle size={16} color="#10b981" /> 
-          {" "}Your health data is encrypted
-        </Text>
+        <View style={styles.hintContainer}>
+          <CheckCircle size={16} color="#10b981" />
+          <Text style={styles.hint}>
+            Your health data is encrypted and secure
+          </Text>
+        </View>
       </View>
 
-      {/* Optional: Medical pattern background */}
-      <View style={styles.bgPattern} />
+      {/* Background pattern */}
+      <View style={[styles.bgPattern, { backgroundColor: colors.secondary + '10' }]} />
     </View>
   );
 };
@@ -191,19 +326,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 2,
   },
-  vaultContainer: {
+  iconContainer: {
     marginBottom: 30,
     position: 'relative',
+    borderRadius: 60,
+    borderWidth: 2,
   },
-  vaultBody: {
-    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+  iconBody: {
     width: 120,
     height: 120,
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(124, 58, 237, 0.3)',
     position: 'relative',
     overflow: 'hidden',
   },
@@ -235,52 +369,69 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     textAlign: 'center',
   },
+  progressSection: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   progressBarContainer: {
     height: 6,
     width: '100%',
     backgroundColor: 'rgba(156, 163, 175, 0.2)',
     borderRadius: 3,
-    marginTop: 30,
     overflow: 'hidden',
+    position: 'relative',
   },
   progressBar: {
     height: '100%',
-    backgroundColor: '#7c3aed',
     borderRadius: 3,
-  },
-  dnaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-    height: 40,
-    position: 'relative',
-  },
-  dnaStrand: {
     position: 'absolute',
-    height: 2,
-    width: '100%',
-    backgroundColor: 'rgba(124, 58, 237, 0.5)',
-    zIndex: -1,
+    left: 0,
+    top: 0,
   },
-  dnaNode: {
-    width: 12,
+  progressGlow: {
     height: 12,
     borderRadius: 6,
-    marginHorizontal: 8,
+    position: 'absolute',
+    left: 0,
+    top: -3,
+    opacity: 0.6,
   },
-  hint: {
-    marginTop: 20,
-    color: '#9ca3af',
+  progressText: {
     fontSize: 14,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  particlesContainer: {
+    position: 'absolute',
+    top: 100,
+    left: 0,
+    right: 0,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  particle: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  hintContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 20,
+    gap: 8,
+  },
+  hint: {
+    color: '#9ca3af',
+    fontSize: 14,
   },
   bgPattern: {
     position: 'absolute',
     width: '100%',
     height: '100%',
-    backgroundColor: '#0f0f14',
-    opacity: 0.95,
+    opacity: 0.05,
     zIndex: 1,
   },
 });

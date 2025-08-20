@@ -10,9 +10,10 @@ import {
   ScrollView,
   Modal,
   Alert,
-  Linking
+  Linking,
+  Animated
 } from 'react-native';
-import { Wallet, RefreshCcw, EyeOff, Eye, ArrowDown, ArrowUp, Info, X } from 'lucide-react-native';
+import { Wallet, RefreshCcw, EyeOff, Eye, ArrowDown, ArrowUp, Info, X, TrendingUp, DollarSign, CreditCard } from 'lucide-react-native';
 import api from '../../assets/api';
 
 const WalletScreen = () => {
@@ -21,6 +22,8 @@ const WalletScreen = () => {
   const [loading, setLoading] = useState(true);
   const [balanceVisible, setBalanceVisible] = useState(false);
   const [showFullHistory, setShowFullHistory] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [balanceAnimation] = useState(new Animated.Value(0));
   
   // Deposit states
   const [depositModalVisible, setDepositModalVisible] = useState(false);
@@ -42,15 +45,27 @@ const WalletScreen = () => {
     fetchWallet();
   }, []);
 
+  useEffect(() => {
+    // Balance reveal animation
+    Animated.timing(balanceAnimation, {
+      toValue: balanceVisible ? 1 : 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [balanceVisible]);
+
   const fetchWallet = async () => {
     try {
+      setRefreshing(true);
       const res = await api.get('/wallet/wallet/');
       setWallet(res.data);
       fetchTransactions();
     } catch (err) {
       console.log('Error fetching wallet:', err);
+      Alert.alert('Error', 'Failed to load wallet data');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -66,6 +81,11 @@ const WalletScreen = () => {
   const handleDeposit = async () => {
     if (!depositAmount || isNaN(depositAmount) || !depositPin) {
       Alert.alert('Error', 'Please enter valid amount and PIN');
+      return;
+    }
+
+    if (parseFloat(depositAmount) < 100) {
+      Alert.alert('Minimum Amount', 'Minimum deposit amount is ₦100');
       return;
     }
 
@@ -127,6 +147,11 @@ const WalletScreen = () => {
     if (!withdrawAmount || isNaN(withdrawAmount) || !withdrawPin || 
         !bankName || !accountNumber || !accountName) {
       Alert.alert('Error', 'Please fill all required fields');
+      return;
+    }
+
+    if (parseFloat(withdrawAmount) < 500) {
+      Alert.alert('Minimum Amount', 'Minimum withdrawal amount is ₦500');
       return;
     }
 
@@ -214,6 +239,18 @@ const WalletScreen = () => {
     }));
   };
 
+  const getTransactionStats = () => {
+    const totalDeposits = transactions
+      .filter(tx => tx.transaction_type === 'credit' && tx.status === 'success')
+      .reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+    
+    const totalWithdrawals = transactions
+      .filter(tx => tx.transaction_type === 'debit' && tx.status === 'success')
+      .reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+
+    return { totalDeposits, totalWithdrawals };
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -236,6 +273,8 @@ const WalletScreen = () => {
     ? groupTransactionsByMonth(transactions) 
     : groupTransactionsByMonth(transactions).slice(0, 2);
 
+  const { totalDeposits, totalWithdrawals } = getTransactionStats();
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -244,8 +283,16 @@ const WalletScreen = () => {
           <Text style={styles.headerTitle}>My Wallet</Text>
           <Text style={styles.headerSubtitle}>Account: {wallet.wallet_name}</Text>
         </View>
-        <TouchableOpacity style={styles.refreshButton} onPress={fetchWallet}>
-          <RefreshCcw size={20} color="#a855f7" />
+        <TouchableOpacity 
+          style={styles.refreshButton} 
+          onPress={fetchWallet}
+          disabled={refreshing}
+        >
+          {refreshing ? (
+            <ActivityIndicator size="small" color="#a855f7" />
+          ) : (
+            <RefreshCcw size={20} color="#a855f7" />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -262,13 +309,30 @@ const WalletScreen = () => {
           </TouchableOpacity>
         </View>
         
-        {balanceVisible ? (
-          <Text style={styles.balanceAmount}>₦{wallet.user_balance}</Text>
-        ) : (
-          <View style={styles.hiddenBalance}>
-            <Text style={styles.balanceAmount}>******</Text>
+        <Animated.View style={{ opacity: balanceAnimation }}>
+          {balanceVisible ? (
+            <Text style={styles.balanceAmount}>₦{parseFloat(wallet.user_balance).toLocaleString()}</Text>
+          ) : (
+            <View style={styles.hiddenBalance}>
+              <Text style={styles.balanceAmount}>••••••</Text>
+            </View>
+          )}
+        </Animated.View>
+        
+        {/* Quick Stats */}
+        <View style={styles.quickStats}>
+          <View style={styles.statItem}>
+            <TrendingUp size={16} color="#10b981" />
+            <Text style={styles.statLabel}>Total In</Text>
+            <Text style={styles.statValue}>₦{totalDeposits.toLocaleString()}</Text>
           </View>
-        )}
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <ArrowUp size={16} color="#ef4444" />
+            <Text style={styles.statLabel}>Total Out</Text>
+            <Text style={styles.statValue}>₦{totalWithdrawals.toLocaleString()}</Text>
+          </View>
+        </View>
         
         <View style={styles.actionButtons}>
           <TouchableOpacity 
@@ -314,11 +378,16 @@ const WalletScreen = () => {
                     tx.transaction_type === 'credit' ? styles.creditCard : styles.debitCard
                   ]}>
                     <View style={styles.transactionHeader}>
-                      {tx.transaction_type === 'credit' ? (
-                        <ArrowDown size={20} color="#10b981" />
-                      ) : (
-                        <ArrowUp size={20} color="#ef4444" />
-                      )}
+                      <View style={[
+                        styles.transactionIconContainer,
+                        { backgroundColor: tx.transaction_type === 'credit' ? '#d1fae5' : '#fee2e2' }
+                      ]}>
+                        {tx.transaction_type === 'credit' ? (
+                          <ArrowDown size={16} color="#10b981" />
+                        ) : (
+                          <ArrowUp size={16} color="#ef4444" />
+                        )}
+                      </View>
                       <View style={styles.transactionInfo}>
                         <Text style={styles.transactionType}>
                           {tx.transaction_type === 'credit' ? 'Deposit' : 'Withdrawal'}
@@ -331,16 +400,26 @@ const WalletScreen = () => {
                             {tx.description}
                           </Text>
                         )}
-                        <Text style={styles.transactionStatus}>
-                          Status: {tx.status}
-                        </Text>
+                        <View style={styles.statusContainer}>
+                          <View style={[
+                            styles.statusBadge,
+                            { backgroundColor: tx.status === 'success' ? '#d1fae5' : '#fef3c7' }
+                          ]}>
+                            <Text style={[
+                              styles.statusText,
+                              { color: tx.status === 'success' ? '#10b981' : '#f59e0b' }
+                            ]}>
+                              {tx.status.charAt(0).toUpperCase() + tx.status.slice(1)}
+                            </Text>
+                          </View>
+                        </View>
                       </View>
                     </View>
                     <Text style={[
                       styles.transactionAmount,
                       tx.transaction_type === 'credit' ? styles.creditAmount : styles.debitAmount
                     ]}>
-                      {tx.transaction_type === 'credit' ? '+' : '-'}₦{tx.amount}
+                      {tx.transaction_type === 'credit' ? '+' : '-'}₦{parseFloat(tx.amount).toLocaleString()}
                     </Text>
                   </View>
                 ))}
@@ -355,7 +434,7 @@ const WalletScreen = () => {
         )}
       </ScrollView>
 
-      {/* Deposit Modal */}
+      {/* Enhanced Deposit Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -364,20 +443,24 @@ const WalletScreen = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <TouchableOpacity 
-              style={styles.modalCloseButton}
-              onPress={() => setDepositModalVisible(false)}
-            >
-              <X size={24} color="#6b7280" />
-            </TouchableOpacity>
-            
-            <Text style={styles.modalTitle}>Deposit Funds</Text>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIconContainer}>
+                <DollarSign size={24} color="#10b981" />
+              </View>
+              <Text style={styles.modalTitle}>Deposit Funds</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setDepositModalVisible(false)}
+              >
+                <X size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
             
             <View style={styles.modalInputContainer}>
               <Text style={styles.modalInputLabel}>Amount (₦)</Text>
               <TextInput
                 style={styles.modalInput}
-                placeholder="0.00"
+                placeholder="Minimum ₦100"
                 placeholderTextColor="#6b7280"
                 keyboardType="numeric"
                 value={depositAmount}
@@ -398,6 +481,13 @@ const WalletScreen = () => {
                 onChangeText={setDepositPin}
               />
             </View>
+
+            <View style={styles.infoBox}>
+              <Info size={16} color="#3b82f6" />
+              <Text style={styles.infoText}>
+                You can only deposit once per week. Minimum amount is ₦100.
+              </Text>
+            </View>
             
             <TouchableOpacity
               style={[styles.modalButton, styles.depositButton]}
@@ -414,7 +504,7 @@ const WalletScreen = () => {
         </View>
       </Modal>
 
-      {/* Withdraw Modal */}
+      {/* Enhanced Withdraw Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -423,21 +513,25 @@ const WalletScreen = () => {
       >
         <View style={styles.modalContainer}>
           <View style={[styles.modalContent, { paddingBottom: 30 }]}>
-            <TouchableOpacity 
-              style={styles.modalCloseButton}
-              onPress={() => setWithdrawModalVisible(false)}
-            >
-              <X size={24} color="#6b7280" />
-            </TouchableOpacity>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIconContainer}>
+                <CreditCard size={24} color="#ef4444" />
+              </View>
+              <Text style={styles.modalTitle}>Withdraw Funds</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setWithdrawModalVisible(false)}
+              >
+                <X size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
             
-            <Text style={styles.modalTitle}>Withdraw Funds</Text>
-            
-            <ScrollView>
+            <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.modalInputContainer}>
                 <Text style={styles.modalInputLabel}>Amount (₦)</Text>
                 <TextInput
                   style={styles.modalInput}
-                  placeholder="0.00"
+                  placeholder="Minimum ₦500"
                   placeholderTextColor="#6b7280"
                   keyboardType="numeric"
                   value={withdrawAmount}
@@ -502,6 +596,13 @@ const WalletScreen = () => {
                   value={withdrawPin}
                   onChangeText={setWithdrawPin}
                 />
+              </View>
+
+              <View style={styles.infoBox}>
+                <Info size={16} color="#f59e0b" />
+                <Text style={styles.infoText}>
+                  Minimum withdrawal is ₦500. Processing may take 1-3 business days.
+                </Text>
               </View>
             </ScrollView>
             
@@ -604,12 +705,41 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
     color: 'white',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   hiddenBalance: {
     height: 48,
     justifyContent: 'center',
+    marginBottom: 16,
+  },
+  quickStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 24,
+    paddingVertical: 16,
+    backgroundColor: '#111827',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#374151',
+    marginHorizontal: 16,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#9ca3af',
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'white',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -672,7 +802,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingRight: 70,
   },
   creditCard: {
     borderLeftWidth: 4,
@@ -685,9 +814,17 @@ const styles = StyleSheet.create({
   transactionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+  },
+  transactionIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   transactionInfo: {
-    marginLeft: 12,
     flex: 1,
   },
   transactionType: {
@@ -698,22 +835,31 @@ const styles = StyleSheet.create({
   transactionDate: {
     fontSize: 12,
     color: '#9ca3af',
-    marginTop: 4,
+    marginTop: 2,
   },
   transactionDescription: {
     fontSize: 12,
     color: '#9ca3af',
-    marginTop: 4,
+    marginTop: 2,
     fontStyle: 'italic',
   },
-  transactionStatus: {
-    fontSize: 12,
-    color: '#9ca3af',
+  statusContainer: {
     marginTop: 4,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   transactionAmount: {
     fontSize: 16,
     fontWeight: '700',
+    marginLeft: 12,
   },
   creditAmount: {
     color: '#10b981',
@@ -743,21 +889,30 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     marginHorizontal: 24,
-    position: 'relative',
     maxHeight: '80%',
   },
-  modalCloseButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    zIndex: 1,
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: 'white',
-    marginBottom: 24,
-    textAlign: 'center',
+    flex: 1,
+  },
+  modalCloseButton: {
+    padding: 4,
   },
   modalInputContainer: {
     marginBottom: 16,
@@ -773,6 +928,21 @@ const styles = StyleSheet.create({
     padding: 16,
     color: 'white',
     fontSize: 16,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    gap: 8,
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#9ca3af',
+    flex: 1,
+    lineHeight: 16,
   },
   modalButton: {
     borderRadius: 12,

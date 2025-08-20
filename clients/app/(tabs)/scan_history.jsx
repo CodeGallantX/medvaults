@@ -7,9 +7,11 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
-  Alert
+  Alert,
+  RefreshControl,
+  Animated
 } from 'react-native';
-import { AlertTriangle, Clock, ArrowLeft, RefreshCcw, Info } from 'lucide-react-native';
+import { AlertTriangle, Clock, ArrowLeft, RefreshCcw, Info, CheckCircle, AlertCircle, HelpCircle, Filter, Search } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import api from '../../assets/api';
 
@@ -17,10 +19,21 @@ const ScanHistoryScreen = () => {
   const [scans, setScans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filterType, setFilterType] = useState('all'); // 'all', 'high', 'medium', 'low', 'safe'
+  const [fadeAnim] = useState(new Animated.Value(0));
   const navigation = useNavigation();
 
   useEffect(() => {
     fetchScanHistory();
+  }, []);
+
+  useEffect(() => {
+    // Fade in animation
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const fetchScanHistory = async () => {
@@ -46,26 +59,93 @@ const ScanHistoryScreen = () => {
   };
 
   const getRiskLevelColor = (riskLevel) => {
-    if (!riskLevel) return '#6b7280'; // Default for no risk
+    if (!riskLevel) return '#6b7280';
     const lowerCaseRisk = riskLevel.toLowerCase();
     if (lowerCaseRisk.includes('high')) return '#ef4444';
     if (lowerCaseRisk.includes('medium')) return '#f59e0b';
     if (lowerCaseRisk.includes('low')) return '#10b981';
-    return '#6b7280'; // Default color
+    if (lowerCaseRisk.includes('no') || lowerCaseRisk.includes('safe')) return '#10b981';
+    return '#6b7280';
+  };
+
+  const getRiskIcon = (riskLevel) => {
+    if (!riskLevel) return <HelpCircle size={18} color="#6b7280" />;
+    const lowerCaseRisk = riskLevel.toLowerCase();
+    if (lowerCaseRisk.includes('high')) return <AlertCircle size={18} color="#ef4444" />;
+    if (lowerCaseRisk.includes('medium')) return <AlertTriangle size={18} color="#f59e0b" />;
+    if (lowerCaseRisk.includes('low') || lowerCaseRisk.includes('no') || lowerCaseRisk.includes('safe')) return <CheckCircle size={18} color="#10b981" />;
+    return <HelpCircle size={18} color="#6b7280" />;
   };
 
   const formatRiskLevelText = (riskLevel) => {
-    if (!riskLevel) return 'No risk detected';
-    if (riskLevel.includes('there are no allergy')) return 'No risk detected';
-    return riskLevel;
+    if (!riskLevel) return 'Unknown';
+    if (riskLevel.includes('there are no allergy')) return 'Safe';
+    return riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1);
   };
 
-  const renderScanItem = ({ item }) => (
-    <View style={styles.scanCard}>
+  const getFilteredScans = () => {
+    if (filterType === 'all') return scans;
+    
+    return scans.filter(scan => {
+      const risk = scan.risk_level?.toLowerCase() || '';
+      switch (filterType) {
+        case 'high':
+          return risk.includes('high');
+        case 'medium':
+          return risk.includes('medium');
+        case 'low':
+          return risk.includes('low');
+        case 'safe':
+          return risk.includes('no') || risk.includes('safe');
+        default:
+          return true;
+      }
+    });
+  };
+
+  const getFilterStats = () => {
+    const high = scans.filter(s => s.risk_level?.toLowerCase().includes('high')).length;
+    const medium = scans.filter(s => s.risk_level?.toLowerCase().includes('medium')).length;
+    const low = scans.filter(s => s.risk_level?.toLowerCase().includes('low')).length;
+    const safe = scans.filter(s => s.risk_level?.toLowerCase().includes('no') || s.risk_level?.toLowerCase().includes('safe')).length;
+    
+    return { high, medium, low, safe, total: scans.length };
+  };
+
+  const renderScanItem = ({ item, index }) => (
+    <Animated.View 
+      style={[
+        styles.scanCard,
+        {
+          opacity: fadeAnim,
+          transform: [{
+            translateY: fadeAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [50, 0],
+            }),
+          }],
+        }
+      ]}
+    >
       <View style={styles.scanHeader}>
-        <Text style={styles.scanFoodName}>{item.food_name}</Text>
-        <View style={[styles.riskBadge, { backgroundColor: getRiskLevelColor(item.risk_level) }]}>
-          <Text style={styles.riskBadgeText}>
+        <View style={styles.scanTitleContainer}>
+          <Text style={styles.scanFoodName}>{item.food_name}</Text>
+          <View style={styles.scanMeta}>
+            <Clock size={12} color="#6b7280" />
+            <Text style={styles.scanTime}>
+              {new Date(item.created_at).toLocaleDateString()}
+            </Text>
+          </View>
+        </View>
+        <View style={[
+          styles.riskBadge, 
+          { backgroundColor: getRiskLevelColor(item.risk_level) + '20' }
+        ]}>
+          {getRiskIcon(item.risk_level)}
+          <Text style={[
+            styles.riskBadgeText,
+            { color: getRiskLevelColor(item.risk_level) }
+          ]}>
             {formatRiskLevelText(item.risk_level)}
           </Text>
         </View>
@@ -80,25 +160,55 @@ const ScanHistoryScreen = () => {
       )}
 
       <View style={styles.scanDetails}>
-        {item.detected_allergen && (
+        {item.detected_allergen && !item.risk_level?.includes('no allergy') && (
           <View style={styles.detailRow}>
-            <AlertTriangle size={18} color="#ef4444" />
+            <AlertTriangle size={16} color="#ef4444" />
             <Text style={styles.detailText}>
-              Detected: {item.detected_allergen}
+              Allergen: {item.detected_allergen}
             </Text>
           </View>
         )}
 
+        {item.confidence && (
+          <View style={styles.detailRow}>
+            <Info size={16} color="#3b82f6" />
+            <Text style={styles.detailText}>
+              Confidence: {Math.round(item.confidence * 100)}%
+            </Text>
+          </View>
+        )}
+      </View>
+    </Animated.View>
+  );
 
-
-        <View style={styles.detailRow}>
-          <Clock size={18} color="#6b7280" />
-          <Text style={styles.detailText}>
-            {new Date(item.created_at).toLocaleString()}
+  const FilterButton = ({ type, label, count, isActive, onPress }) => (
+    <TouchableOpacity
+      style={[
+        styles.filterButton,
+        isActive && styles.filterButtonActive
+      ]}
+      onPress={onPress}
+    >
+      <Text style={[
+        styles.filterButtonText,
+        isActive && styles.filterButtonTextActive
+      ]}>
+        {label}
+      </Text>
+      {count > 0 && (
+        <View style={[
+          styles.filterBadge,
+          isActive && styles.filterBadgeActive
+        ]}>
+          <Text style={[
+            styles.filterBadgeText,
+            isActive && styles.filterBadgeTextActive
+          ]}>
+            {count}
           </Text>
         </View>
-      </View>
-    </View>
+      )}
+    </TouchableOpacity>
   );
 
   if (loading) {
@@ -110,6 +220,9 @@ const ScanHistoryScreen = () => {
     );
   }
 
+  const filteredScans = getFilteredScans();
+  const stats = getFilterStats();
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -120,7 +233,10 @@ const ScanHistoryScreen = () => {
         >
           <ArrowLeft size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Your Scan History</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>Scan History</Text>
+          <Text style={styles.headerSubtitle}>{stats.total} total scans</Text>
+        </View>
         <TouchableOpacity 
           style={styles.refreshButton}
           onPress={onRefresh}
@@ -134,21 +250,80 @@ const ScanHistoryScreen = () => {
         </TouchableOpacity>
       </View>
 
+      {/* Filter Section */}
+      <View style={styles.filterSection}>
+        <View style={styles.filterHeader}>
+          <Filter size={16} color="#9ca3af" />
+          <Text style={styles.filterTitle}>Filter by Risk Level</Text>
+        </View>
+        <View style={styles.filterButtons}>
+          <FilterButton
+            type="all"
+            label="All"
+            count={stats.total}
+            isActive={filterType === 'all'}
+            onPress={() => setFilterType('all')}
+          />
+          <FilterButton
+            type="safe"
+            label="Safe"
+            count={stats.safe}
+            isActive={filterType === 'safe'}
+            onPress={() => setFilterType('safe')}
+          />
+          <FilterButton
+            type="low"
+            label="Low"
+            count={stats.low}
+            isActive={filterType === 'low'}
+            onPress={() => setFilterType('low')}
+          />
+          <FilterButton
+            type="medium"
+            label="Medium"
+            count={stats.medium}
+            isActive={filterType === 'medium'}
+            onPress={() => setFilterType('medium')}
+          />
+          <FilterButton
+            type="high"
+            label="High"
+            count={stats.high}
+            isActive={filterType === 'high'}
+            onPress={() => setFilterType('high')}
+          />
+        </View>
+      </View>
+
       {/* Content */}
       <FlatList
-        data={scans}
+        data={filteredScans}
         renderItem={renderScanItem}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#a855f7']}
+            tintColor="#a855f7"
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Info size={48} color="#6b7280" />
-            <Text style={styles.emptyText}>No scan history found</Text>
-            <Text style={styles.emptySubtext}>Scan some food to see your history here</Text>
+            <Search size={48} color="#6b7280" />
+            <Text style={styles.emptyText}>
+              {filterType === 'all' ? 'No scan history found' : `No ${filterType} risk scans found`}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {filterType === 'all' 
+                ? 'Scan some food to see your history here' 
+                : 'Try adjusting your filter or scan more food'
+              }
+            </Text>
           </View>
         }
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
@@ -185,11 +360,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: '#fff',
-    marginHorizontal: 16,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 2,
   },
   refreshButton: {
     width: 40,
@@ -198,6 +381,68 @@ const styles = StyleSheet.create({
     backgroundColor: '#1f2937',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  filterSection: {
+    backgroundColor: '#1f2937',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 16,
+  },
+  filterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  filterTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#9ca3af',
+  },
+  filterButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#374151',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  filterButtonActive: {
+    backgroundColor: '#a855f7',
+  },
+  filterButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9ca3af',
+  },
+  filterButtonTextActive: {
+    color: '#ffffff',
+  },
+  filterBadge: {
+    backgroundColor: '#4b5563',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: 'center',
+  },
+  filterBadgeActive: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  filterBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#d1d5db',
+  },
+  filterBadgeTextActive: {
+    color: '#ffffff',
   },
   listContent: {
     paddingHorizontal: 16,
@@ -214,25 +459,39 @@ const styles = StyleSheet.create({
   scanHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 12,
+  },
+  scanTitleContainer: {
+    flex: 1,
+    marginRight: 12,
   },
   scanFoodName: {
     fontSize: 18,
     fontWeight: '600',
     color: '#fff',
-    flex: 1,
+    marginBottom: 4,
+  },
+  scanMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  scanTime: {
+    fontSize: 12,
+    color: '#6b7280',
   },
   riskBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    marginLeft: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    gap: 4,
   },
   riskBadgeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#fff',
   },
   foodImage: {
     width: '100%',
@@ -242,27 +501,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#374151',
   },
   scanDetails: {
-    marginTop: 8,
+    gap: 8,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 8,
   },
   detailText: {
     fontSize: 14,
     color: '#9ca3af',
-    marginLeft: 8,
+    flex: 1,
   },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 40,
+    marginTop: 60,
   },
   emptyText: {
     color: '#9ca3af',
     fontSize: 18,
+    fontWeight: '600',
     marginTop: 16,
     textAlign: 'center',
   },
