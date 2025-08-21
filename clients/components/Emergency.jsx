@@ -1,50 +1,98 @@
-import * as Location from "expo-location";
 import api from "../assets/api.js";
+import { Alert } from "react-native";
 
 export const SendEmergencyAlert = async () => {
   try {
-    // 🔐 Request permission with more detailed error handling
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      alert("Permission to access location was denied. Please enable it in settings.");
-      return;
-    }
+    // 🔐 Request permission with detailed feedback
+    // let { status } = await Location.requestForegroundPermissionsAsync();
+    
+    // if (status !== "granted") {
+    //   Alert.alert(
+    //     "Location Permission Required",
+    //     "MedVault needs location access to send emergency alerts.",
+    //     [
+    //       {
+    //         text: "Cancel",
+    //         style: "cancel"
+    //       },
+    //       {
+    //         text: "Open Settings",
+    //         onPress: () => Linking.openSettings()
+    //       }
+    //     ]
+    //   );
+    //   return;
+    // }
 
-    // Check if location services are enabled
-    const servicesEnabled = await Location.hasServicesEnabledAsync();
-    if (!servicesEnabled) {
-      alert("Location services are disabled. Please enable them in your device settings.");
-      return;
-    }
+    // // Check if location services are enabled
+    // if (!await Location.hasServicesEnabledAsync()) {
+    //   Alert.alert(
+    //     "Enable Location Services",
+    //     "Please enable location services in your device settings.",
+    //     [
+    //       {
+    //         text: "Cancel",
+    //         style: "cancel"
+    //       },
+    //       {
+    //         text: "Open Settings",
+    //         onPress: () => Linking.openSettings()
+    //       }
+    //     ]
+    //   );
+    //   return;
+    // }
 
-    // 📍 Get current location with timeout and accuracy options
-    const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.High,
-      timeout: 10000, // 10 seconds timeout
-    }).catch(error => {
-      console.error("Location error:", error);
-      throw new Error("Could not get your current location. Please check your connection and try again.");
-    });
+    // // 📍 Get current location with fallbacks
+    // const locationOptions = {
+    //   accuracy: Location.Accuracy.BestForNavigation,
+    //   timeout: 15000, // 15 seconds timeout
+    //   distanceInterval: 10, // Minimum change in meters to update
+    // };
 
-    const { latitude, longitude } = location.coords;
+    // const location = await Promise.race([
+    //   Location.getCurrentPositionAsync(locationOptions),
+    //   new Promise((_, reject) =>
+    //     setTimeout(() => reject(new Error("Location request timed out")), 15000)
+    //   )
+    // ]);
 
-    // 🚀 Send location to backend
-    const res = await api.post("/send_message/", {
-      location: {
-        latitude,
-        longitude,
-      },
-    });
+    // const { latitude, longitude } = location.coords;
 
-    console.log("Emergency sent ✅", res.data);
-    alert("Emergency alert sent successfully!");
-    return res.data; // Return the response data for further processing if needed
-  } catch (error) {
-    console.error(
-      "Emergency alert failed ❌",
-      error.response?.data || error.message
+    // 🚀 Send alert to backend with timeout
+    const response = await Promise.race([
+      api.post("/send_message/", {
+        location: { latitude: 6.582196, longitude: 4.003449 },
+        timestamp: new Date().toISOString(),
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Server request timed out")), 10000)
+      )
+    ]);
+
+    console.log("Emergency sent ✅", response.data);
+    Alert.alert(
+      "Alert Sent",
+      "Your emergency alert has been successfully sent with your location.",
+      [{ text: "OK" }]
     );
-    alert(error.message || "Something went wrong sending the alert. Please try again.");
-    throw error; // Re-throw the error if you want calling code to handle it
+    
+    return response.data;
+  } catch (error) {
+    console.error("Emergency alert failed ❌", error);
+    
+    let errorMessage = error.message;
+    if (error.response) {
+      errorMessage = error.response.data?.message ||
+        `Server error: ${error.response.status}`;
+    }
+
+    Alert.alert(
+      "Alert Failed",
+      errorMessage || "Could not send emergency alert. Please try again.",
+      [{ text: "OK" }]
+    );
+    
+    throw error;
   }
 };

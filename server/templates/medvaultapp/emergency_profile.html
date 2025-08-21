@@ -13,7 +13,7 @@
             <h3>🚨 MedVault Emergency Health Profile</h3>
         </div>
         <div class="card-body">
-            <p><strong>Name:</strong> {{ profile.user.get_full_name }}</p>
+            <p><strong>Name:</strong> {{ profile.user.first_name }} {{profile.user.last_name }}</p>
             <p><strong>Blood Type:</strong> {{ profile.blood_type }} | <strong>Genotype:</strong> {{ profile.genotype }}</p>
             <p><strong>Weight:</strong> {{ profile.weight }} kg</p>
             <p><strong>Allergies:</strong> {{ profile.allergies }}</p>
@@ -28,8 +28,7 @@
             <p><strong>Name:</strong> {{ profile.emergency_contact_name }}</p>
             <p><strong>Phone:</strong> <a href="tel:{{ profile.emergency_contact_phone }}">{{ profile.emergency_contact_phone }}</a></p>
             <hr>
-            <h6>🧾 Scan QR:</h6>
-            <img src="{{ qrcode.qr_image.url }}" class="img-fluid" alt="QR Code">
+    
         </div>
         <div class="card-footer text-center text-muted">
             🛡️ Powered by MedVault

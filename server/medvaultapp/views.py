@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import generics, status
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -19,6 +19,8 @@ import nyckel
 from django.utils import timezone
 from datetime import timedelta
 from django.http import JsonResponse
+# from django.contrib.gis.geos import Point
+# from django.contrib.gis.db.models.functions import Distance
 
 
 User = get_user_model()
@@ -64,13 +66,23 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
+from django.shortcuts import render, get_object_or_404
+from django.utils import timezone
+from .models import QRCode
 
 def emergency_profile_view(request, token):
     qrcode = get_object_or_404(QRCode, qr_token=token)
+
+    if qrcode.is_expired():
+        return render(request, 'medvaultapp/inactive.html', status=403)  # 🚫 Inactive page
+
     profile = qrcode.profile
-    return render(request, 'medvaultapp/emergency_profile.html', {'profile': profile, 'qrcode': qrcode})
 
+    context = {
+        "profile" : profile
+    }
 
+    return render(request, 'medvaultapp/emergency_profile.html', context)
 
 
 class EmergencyProfileView(APIView):
@@ -102,6 +114,37 @@ class EmergencyProfileView(APIView):
 
 
 
+# class QRCodeView(APIView):
+#     authentication_classes = [JWTAuthentication]
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         try:
+#             profile = request.user.emergencyprofile
+#             qrcode = profile.qrcode
+#             if not qrcode.qr_image:
+#                 qrcode.save()  # triggers `generate_qr()` in model
+
+#             return Response({
+#                 "qr_token": str(qrcode.qr_token),
+#                 "qr_image_url": request.build_absolute_uri(qrcode.qr_image.url)
+#             }, status=status.HTTP_200_OK)
+
+#         except EmergencyProfile.DoesNotExist:
+#             return Response({"detail": "No emergency profile found."}, status=status.HTTP_404_NOT_FOUND)
+#         except QRCode.DoesNotExist:
+#             return Response({"detail": "QR code not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import status
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.shortcuts import get_object_or_404
+from .models import QRCode
+
 class QRCodeView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -111,18 +154,85 @@ class QRCodeView(APIView):
             profile = request.user.emergencyprofile
             qrcode = profile.qrcode
             if not qrcode.qr_image:
-                qrcode.save()  # triggers `generate_qr()` in model
+                qrcode.save()
 
             return Response({
                 "qr_token": str(qrcode.qr_token),
-                "qr_image_url": request.build_absolute_uri(qrcode.qr_image.url)
+                "qr_image_url": request.build_absolute_uri(qrcode.qr_image.url),
+                "is_active": qrcode.is_active,
+                "expires_in_minutes": (60 - int((timezone.now() - qrcode.activated_at).total_seconds() // 60)) if qrcode.is_active else None
             }, status=status.HTTP_200_OK)
 
         except EmergencyProfile.DoesNotExist:
             return Response({"detail": "No emergency profile found."}, status=status.HTTP_404_NOT_FOUND)
-        except QRCode.DoesNotExist:
-            return Response({"detail": "QR code not found."}, status=status.HTTP_404_NOT_FOUND)
 
+# # 🎯 This endpoint is accessed via the QR link itself
+# class QRCodeStatusPublicView(APIView):
+#     permission_classes = [AllowAny]
+
+#     def get(self, request, token):
+#         qrcode = get_object_or_404(QRCode, qr_token=token)
+#         if qrcode.is_expired():
+#             return Response({"detail": "QR code is inactive or expired."}, status=status.HTTP_403_FORBIDDEN)
+
+#         return Response({
+#             "status": "active",
+#             "profile_id": qrcode.profile.id,
+#             "message": "QR code is valid and active."
+#         }, status=status.HTTP_200_OK)
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from .models import QRCode
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from .models import QRCode
+
+class QRCodeStatusPublicView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        try:
+            qrcode = get_object_or_404(QRCode, qr_token=token)
+
+            # ❗ Block access if expired or inactive
+            if qrcode.is_expired():
+                return Response({
+                    "detail": "QR code is inactive or expired."
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            # ✅ Only return a message if valid
+            return Response({
+                "status": "active",
+                "message": "QR code is valid."
+            }, status=status.HTTP_200_OK)
+
+        except QRCode.DoesNotExist:
+            return Response({
+                "detail": "QR code not found."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
+# Endpoint to activate QR manually (e.g. in app)
+class ActivateQRCodeView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            profile = request.user.emergencyprofile
+            qrcode = profile.qrcode
+            qrcode.activate()
+            return Response({"detail": "QR code activated for 1 hour."}, status=status.HTTP_200_OK)
+        except EmergencyProfile.DoesNotExist:
+            return Response({"detail": "No emergency profile found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 
@@ -577,9 +687,38 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from twilio.rest import Client
 
 
+# from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from math import radians, sin, cos, sqrt, atan2
+from twilio.rest import Client
+
 class SendmessageToContact(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+
+    def haversine_distance(self, lat1, lon1, lat2, lon2):
+        """
+        Calculate the great-circle distance between two points 
+        on the Earth's surface using the Haversine formula.
+        Returns distance in kilometers.
+        """
+        lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+        c = 2 * atan2(sqrt(a), sqrt(1-a))
+        return 6371 * c  # Earth's radius in km
+
+    def format_nigerian_number(self, number):
+        """Format Nigerian phone number to international format"""
+        number = number.strip()
+        if number.startswith("0"):
+            return "+234" + number[1:]
+        elif number.startswith("+234"):
+            return number
+        raise ValueError("Invalid Nigerian phone number format")
 
     def post(self, request):
         coords = request.data.get("location", {})
@@ -589,56 +728,176 @@ class SendmessageToContact(APIView):
         if not lat or not lng:
             return Response({"error": "Location data missing."}, status=400)
 
+        try:
+            user_lat = float(lat)
+            user_lng = float(lng)
+        except (TypeError, ValueError):
+            return Response({"error": "Invalid coordinates."}, status=400)
+
         profile = request.user.emergencyprofile
         raw_number = profile.emergency_contact_phone
 
-        def format_nigerian_number(number):
-            number = number.strip()
-            if number.startswith("0"):
-                return "+234" + number[1:]
-            elif number.startswith("+234"):
-                return number
-            raise ValueError("Invalid Nigerian phone number format")
-
         try:
-            formatted_number = format_nigerian_number(raw_number)
+            formatted_number = self.format_nigerian_number(raw_number)
         except ValueError as e:
             return Response({"error": str(e)}, status=400)
-        
-
-        from django.conf import settings
-
-
-        account_sid ="ACa5d17dfb68375f6c0e429345b6a7cf2a"
-        auth_token = "204e813caa159eca641a715ab217b63d"
-        client = Client(account_sid, auth_token)
-        print(account_sid)
-
-        user_name = request.user.first_name or request.user.username
-        location_link = f"https://maps.google.com/?q={lat},{lng}"
-        voice_message = f"This is an emergency alert. {user_name} may be in danger. The last known location is {location_link}."
 
         try:
+            hospitals = Hospital.objects.filter(
+                is_verified=True
+            ).exclude(
+                latitude__isnull=True
+            ).exclude(
+                longitude__isnull=True
+            )
+            hospital_distances = []
+            for hospital in hospitals:
+                try:
+                    hospital_lat = float(hospital.latitude)
+                    hospital_lng = float(hospital.longitude)
+                    distance = self.haversine_distance(
+                        user_lat, user_lng,
+                        hospital_lat, hospital_lng
+                    )
+                    if distance <= 10:  # Only include hospitals within 10km
+                        hospital_distances.append({
+                            'hospital': hospital,
+                            'distance_km': distance
+                        })
+                except (TypeError, ValueError):
+                    continue
+
+            nearest_hospitals = sorted(
+                hospital_distances,
+                key=lambda x: x['distance_km']
+            )[:5]
+
+            hospital_list = [{
+                "name": h['hospital'].name,
+                "address": h['hospital'].address,
+                "phone_number": h['hospital'].phone_number,
+                "distance_km": round(h['distance_km'], 2)
+            } for h in nearest_hospitals]
+
+        except Exception as e:
+            hospital_list = []
+            print("Error finding nearest hospitals:", str(e))
+
+        user_name = request.user.first_name or request.user.username
+        location_link = f"https://maps.google.com/?q={user_lat},{user_lng}"
+        voice_message = (
+            f"This is an emergency alert. {user_name} may be in danger. "
+            f"The last known location is {location_link}."
+        )
+
+        if hospital_list:
+            hospital_msg = "\nNearest Hospitals:\n" + "\n".join(
+                [f"{i+1}. {h['name']} ({h['address']}) - {h['distance_km']} km {h['phone_number']}" 
+                 for i, h in enumerate(hospital_list)]
+            )
+        else:
+            hospital_msg = "\nNo nearby hospitals found within 10km."
+
+        try:
+            account_sid = "AC6c3b2c0db38df21f3e82b670c0479633"
+            auth_token = "11477a65d6a274102154009f146a8c0d"
+            client = Client(account_sid, auth_token)
+
             call = client.calls.create(
                 to=formatted_number,
-                from_='+14067322959',
+                from_='+18506730396',
                 twiml=f"<Response><Say voice='alice'>{voice_message}</Say></Response>"
             )
 
+            # sms = client.messages.create(
+            #     to=formatted_number,
+            #     from_='+12343393467',
+            #     body="EMERGENCY ALERT!\n" + voice_message + hospital_msg
+            # )
             sms = client.messages.create(
-                to=formatted_number,
-                from_='+14067322959',
-                body="Emergency Alert:\n" + voice_message
-            )
+  messaging_service_sid='MGd438597bcf742c693cc07176a471cbf5',
+  body="EMERGENCY ALERT!\n" + voice_message + hospital_msg,
+  to=formatted_number
+)
 
             return Response({
-                "message": "Emergency alert sent.",
+                "message": "Emergency alert sent successfully",
+                "sms_sid": sms.sid,
                 "call_sid": call.sid,
-                "sms_sid": sms.sid
+                "nearest_hospitals": hospital_list
             })
+            # print("nearest_hospitals:", hospital_list)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            return Response({
+                "error": "Failed to send emergency alert",
+                "details": str(e)
+            }, status=500)
+
+
+
+# class SendmessageToContact(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+
+#     def post(self, request):
+#         coords = request.data.get("location", {})
+#         lat = coords.get("latitude")
+#         lng = coords.get("longitude")
+
+#         if not lat or not lng:
+#             return Response({"error": "Location data missing."}, status=400)
+
+#         profile = request.user.emergencyprofile
+#         raw_number = profile.emergency_contact_phone
+
+#         def format_nigerian_number(number):
+#             number = number.strip()
+#             if number.startswith("0"):
+#                 return "+234" + number[1:]
+#             elif number.startswith("+234"):
+#                 return number
+#             raise ValueError("Invalid Nigerian phone number format")
+
+#         try:
+#             formatted_number = format_nigerian_number(raw_number)
+#         except ValueError as e:
+#             return Response({"error": str(e)}, status=400)
+        
+
+
+
+
+#         account_sid ="AC3cb1d2ef9d9d522a55dd45ca73c28e7a"
+#         auth_token = "0a4df1b54a8334818bc79463ddb6031a"
+#         client = Client(account_sid, auth_token)
+#         print(account_sid)
+
+#         user_name = request.user.first_name or request.user.username
+#         location_link = f"https://maps.google.com/?q={lat},{lng}"
+#         voice_message = f"This is an emergency alert. {user_name} may be in danger. The last known location is {location_link}."
+
+#         try:
+#             call = client.calls.create(
+#                 to=formatted_number,
+#                 from_='+18787289573',
+#                 twiml=f"<Response><Say voice='alice'>{voice_message}</Say></Response>"
+#             )
+
+#             sms = client.messages.create(
+#                 to=formatted_number,
+#                 from_='+18787289573',
+#                 body="Emergency Alert:\n" + voice_message
+#             )
+
+#             return Response({
+#                 "message": "Emergency alert sent.",
+#                 # "call_sid": call.sid,
+#                 "sms_sid": sms.sid
+#             })
+
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=500)
 
 class UserBasicInfo(APIView):
     permission_classes = [IsAuthenticated]
@@ -653,6 +912,11 @@ class UserBasicInfo(APIView):
             "lastname": user.last_name
         }
         return Response(data, status=status.HTTP_200_OK)
+    
+
+
+
+
 
 # @csrf_exempt
 # def verify_payment(request):
@@ -682,4 +946,123 @@ class UserBasicInfo(APIView):
 #             return JsonResponse({"status": "success"})
         
 #         return JsonResponse({"status": "failed"}, status=400)
+from django.conf import settings
+from django.core.mail import send_mail
+from django.urls import reverse
+
+class ChangeStatustoHospital(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = HospitalSerializer
+
+    def post(self, request):
+        user = request.user
+        user.is_hospital = True
+        user.save()
+
+        # Prevent duplicate hospital profile for the same user
+        if Hospital.objects.filter(user=user).exists():
+            return Response(
+                {"detail": "Hospital profile already exists for this user."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = HospitalSerializer(data=request.data)
+        if serializer.is_valid():
+            hospital = serializer.save(user=user)
+
+            # Send email to admin for hospital verification
+            admin_email = getattr(settings, 'ADMIN_EMAIL', None)
+            if admin_email:
+                verify_url = request.build_absolute_uri(
+                    reverse('verify_hospital') + f"?hospital_id={hospital.id}"
+                )
+                subject = "New Hospital Verification Request"
+                message = (
+                    f"A new hospital has registered and requires verification.\n\n"
+                    f"Hospital Name: {hospital.name}\n"
+                    f"Registered by: {user.username} ({user.email})\n"
+                    f"Please review and verify this hospital in the admin panel.\n\n"
+                    f"To verify, click the link below or use hospital_id: {hospital.id}\n"
+                    f"{verify_url}"
+                )
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [admin_email],
+                    fail_silently=True,
+                )
+
+            return Response(HospitalSerializer(hospital).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class Verifyhospital(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        # Accept hospital_id from POST data or GET param
+        hospital_id = request.data.get("hospital_id") or request.GET.get("hospital_id")
+        if not hospital_id:
+            return Response({"detail": "hospital_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            hospital = Hospital.objects.get(id=hospital_id)
+        except Hospital.DoesNotExist:
+            return Response({"detail": "Hospital not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        hospital.is_verified = True
+        hospital.save()
+
+        # Notify the hospital user via email
+        user = hospital.user
+        if hasattr(settings, "DEFAULT_FROM_EMAIL"):
+            subject = "Hospital Account Verified"
+            message = (
+                f"Dear {user.username},\n\n"
+                f"Your hospital account '{hospital.name}' has been verified by the admin. "
+                f"You can now access all hospital features on MedVault+."
+            )
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=True,
+            )
+
+        # Notify admin that verification was completed
+        admin_email = getattr(settings, 'ADMIN_EMAIL', None)
+        if admin_email:
+            subject = "Hospital Verification Completed"
+            message = (
+                f"The hospital '{hospital.name}' (ID: {hospital.id}) registered by {user.username} ({user.email}) "
+                f"has been verified by the admin."
+            )
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [admin_email],
+                fail_silently=True,
+            )
+
+        return Response({"detail": "Hospital verified successfully."}, status=status.HTTP_200_OK)
+
+
+
+class GetVerifiedHospitals(APIView):
+    serializer_classses = HospitalSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [AllowAny]
+
+
+    def get(self, request):
+        hospitals = Hospital.objects.filter(is_verified=True)
+        serializer = self.serializer_classses(hospitals, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 

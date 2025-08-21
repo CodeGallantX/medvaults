@@ -113,7 +113,7 @@ export default function ProfileScreen() {
           
           <View style={styles.profileInfo}>
             <Text style={styles.fullName}>
-              Ojugbele Abdullateef
+              {fullName}
             </Text>
             <Text style={styles.username}>@{username}</Text>
             <Text style={styles.email}>{email}</Text>
@@ -148,7 +148,7 @@ export default function ProfileScreen() {
                 <MaterialIcons name="person" size={20} color="#6b7280" />
                 <Text style={styles.infoLabelText}>First Name</Text>
               </View>
-              <Text style={styles.infoValue}>Abdullateef </Text>
+              <Text style={styles.infoValue}>{firstName} </Text>
             </View>
           </View>
 
@@ -158,7 +158,7 @@ export default function ProfileScreen() {
                 <MaterialIcons name="person-outline" size={20} color="#6b7280" />
                 <Text style={styles.infoLabelText}>Last Name</Text>
               </View>
-              <Text style={styles.infoValue}>Ojugbele</Text>
+              <Text style={styles.infoValue}>{lastName}</Text>
             </View>
           </View>
 

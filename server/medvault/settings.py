@@ -235,6 +235,7 @@ EMAIL_HOST_USER = 'ojugbelelateef2006@gmail.com'
 EMAIL_HOST_PASSWORD = 'yshhvvigaryqlabg'
 DEFAULT_FROM_EMAIL = 'ojugbelelateef2006@gmail.com'  # Default "from" email
 ADMIN_NOTIFICATION_EMAIL = 'ojugbelelateef2006@gmail.com'  # Website owner's email
+ADMIN_EMAIL = 'ojugbelelateef2006@gmail.com'  # Add this line for admin email
 CSRF_TRUSTED_ORIGINS = [
     'http://192.168.16.197:8000/',
 ]
@@ -244,7 +245,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_USER_MODEL = 'medvaultapp.CustomUser'
 
-BASE_FRONTEND_URL = "http://192.168.16.197:8000"  # Change to your live URL later
+BASE_FRONTEND_URL = "https://m7ml4rz4-8000.uks1.devtunnels.ms/"  # Change to your live URL later
 
 
 

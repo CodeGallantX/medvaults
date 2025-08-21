@@ -33,7 +33,7 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const response = await api.post('login/', {username: username, password });
+      const response = await api.post('/authentication/login/', {username: username, password });
       await AsyncStorage.setItem('access_token', response.data.access);
       await AsyncStorage.setItem('refresh_token', response.data.refresh);
       Alert.alert('Login Success');

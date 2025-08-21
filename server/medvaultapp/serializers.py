@@ -93,5 +93,35 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = ['id', 'amount', 'transaction_type', 'created_at', 'status']
         read_only_fields = ['id', 'created_at', 'transaction_type', 'status',]
         
-    
-    
+class HospitalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hospital
+        fields = [
+            'id',
+            'user',
+            'name',
+            'latitude',
+            'longitude',
+            'specification',
+            'phone_number',
+            'email',
+            'website',
+            'address',
+            'city',
+            'state',
+            'country',
+            'is_verified',
+            'verified_registration_num',
+            'hospital_document',
+            'established_year',
+            'bed_count',
+            'accreditation',
+            'emergency_services',
+            'opening_hours',
+            'logo',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = [
+            'id', 'user', 'is_verified', 'created_at', 'updated_at'
+        ]
