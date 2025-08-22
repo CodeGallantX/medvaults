@@ -90,7 +90,7 @@ export default function RegisterScreen() {
   
     setIsLoading(true);
     try {
-        const res = await api.post("/register/", {
+        const res = await api.post("/authentication/register/", {
         username: formData.username,
         email: formData.email,
         first_name: formData.first_name,

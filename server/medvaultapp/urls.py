@@ -6,8 +6,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 urlpatterns = [
     path('', index, name='index'),
     path('home/', Home.as_view()),
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('authentication/register/', RegisterView.as_view(), name='register'),
+    path('authentication/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('emergency/<uuid:token>/', emergency_profile_view, name='emergency-profile'),
     path('api/emergency-profile/', EmergencyProfileView.as_view(), name='emergency-profile-api'),
@@ -23,6 +23,14 @@ urlpatterns = [
     # path("your_scan_history/", FoodAllergyScanListView.as_view(), name="scan_history"),
     path("send_message/", SendmessageToContact.as_view(), name="send_message"),
     path("get_user_info/", UserBasicInfo.as_view(), name="get_user_info"),
+    path("hospital/change_status_to_hospital/", ChangeStatustoHospital.as_view(), name="change_status_to_hospital"),
+    path("hospital/verify_hospital/", Verifyhospital.as_view(), name="verify_hospital"),
+    path("hospital/verified_hospitals/", GetVerifiedHospitals.as_view(), name="verified_hospitals"),
+    path('qr/activate/', ActivateQRCodeView.as_view()),
+    path('emergency/<uuid:token>/', QRCodeStatusPublicView.as_view()),  
+
+
+
     
 
 
