@@ -285,32 +285,40 @@ export const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
       
       // Simulate bot typing
       setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
-        simulateBotResponse(inputText.trim());
-      }, 1500);
+      fetchMockBotResponse(inputText.trim());
     }
   };
 
-  const simulateBotResponse = (userMessage: string) => {
-    const lowerMessage = userMessage.toLowerCase();
-    let response = "";
+  const fetchMockBotResponse = async (userMessage: string) => {
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      response = "Hello! I'm here to help with your health questions. What would you like to know?";
-    } else if (lowerMessage.includes('symptom') || lowerMessage.includes('pain')) {
-      response = "I understand you're experiencing symptoms. Can you describe them in more detail? Remember, for serious concerns, please consult a healthcare professional.";
-    } else if (lowerMessage.includes('medication') || lowerMessage.includes('medicine')) {
-      response = "For medication questions, I recommend consulting with your doctor or pharmacist. They can provide personalized advice based on your medical history.";
-    } else if (lowerMessage.includes('emergency')) {
-      response = "If this is a medical emergency, please call emergency services immediately. For non-emergency health concerns, I'm here to help guide you.";
-    } else if (lowerMessage.includes('allergy') || lowerMessage.includes('allergic')) {
-      response = "Allergies can be serious. You can use our food scanner feature to check for allergens in your meals. Would you like me to guide you to that feature?";
-    } else {
-      response = "Thank you for your question. While I can provide general health information, please remember that I'm not a replacement for professional medical advice. How else can I assist you?";
+      // Mock API response based on user input
+      const lowerMessage = userMessage.toLowerCase();
+      let responseText = "";
+
+      if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+        responseText = "Hello! I'm here to help with your health questions. What would you like to know?";
+      } else if (lowerMessage.includes('symptom') || lowerMessage.includes('pain')) {
+        responseText = "I understand you're experiencing symptoms. Can you describe them in more detail? Remember, for serious concerns, please consult a healthcare professional.";
+      } else if (lowerMessage.includes('medication') || lowerMessage.includes('medicine')) {
+        responseText = "For medication questions, I recommend consulting with your doctor or pharmacist. They can provide personalized advice based on your medical history.";
+      } else if (lowerMessage.includes('emergency')) {
+        responseText = "If this is a medical emergency, please call emergency services immediately. For non-emergency health concerns, I'm here to help guide you.";
+      } else if (lowerMessage.includes('allergy') || lowerMessage.includes('allergic')) {
+        responseText = "Allergies can be serious. You can use our food scanner feature to check for allergens in your meals. Would you like me to guide you to that feature?";
+      } else {
+        responseText = "Thank you for your question. While I can provide general health information, please remember that I'm not a replacement for professional medical advice. How else can I assist you?";
+      }
+
+      addBotMessage(responseText);
+    } catch (error) {
+      console.error("Error fetching mock bot response:", error);
+      addBotMessage("Oops! Something went wrong. Please try again later.");
+    } finally {
+      setIsTyping(false);
     }
-
-    addBotMessage(response);
   };
 
   const openFullChat = () => {
